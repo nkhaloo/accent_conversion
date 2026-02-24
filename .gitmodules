@@ -1,0 +1,6 @@
+[submodule "OpenVoice"]
+	path = OpenVoice
+	url = https://github.com/nkhaloo/OpenVoice.git
+[submodule "Amphion"]
+	path = Amphion
+	url = https://github.com/nkhaloo/Amphion.git
