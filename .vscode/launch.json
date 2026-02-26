@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Accent Conversion (OpenVoice+Vevo)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_accent_conversion.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": [
+        "--openvoice-py",
+        "conda run -n openvoice python",
+        "--vevo-py",
+        "conda run -n vevo python"
+      ]
+    }
+  ]
+}
