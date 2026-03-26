@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """run_zstts.py
 
-Single entrypoint to run both zero-shot accent conversion pipelines:
+Single entrypoint to run zero-shot accent conversion pipelines:
 
 1) OpenVoice (source_wav -> OpenVoice v2 tone color converter)
 	- Source/content audio: each WAV in ./source_wav/
@@ -12,16 +12,15 @@ Single entrypoint to run both zero-shot accent conversion pipelines:
 	- Writes:
 	   output/openvoice/timbre-<reference_stem>__source-<source_stem>__openvoice.wav
 
-2) VevoStyle (Amphion Vevo)
-   - Style/content reference: each WAV in ./source_wav/
-   - Timbre reference: each WAV in ./reference_wav/
-   - Only runs pairs where genders match:
-	   * timbre gender: data/accent_archive_metadata.csv (age_sex contains male/female)
-	   * style gender:  data/english_source_speakers.csv (age_sex or sex)
-   - Writes:
-	   output/vevostyle/timbre-<reference_stem>__style-<source_stem>.wav
+2) SeedVC (style/source_wav -> timbre/reference_wav)
+	- Source/style audio: each WAV in ./source_wav/
+	- Target/timbre reference: each WAV in ./reference_wav/
+	- Only runs pairs where genders match (same CSVs as OpenVoice)
+	- Writes:
+	   output/seedvc/timbre-<reference_stem>__style-<source_stem>__seedvc.wav
 
-This script does NOT modify anything under ./OpenVoice/ or ./Amphion/.
+This script does NOT modify anything under ./OpenVoice/.
+SeedVC is invoked via ./seed-vc/inference.py inside the configured conda env.
 
 Run:
   python src/run_zstts.py
@@ -34,6 +33,7 @@ import csv
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -141,27 +141,49 @@ def _run(argv: list[str], *, cwd: Path) -> None:
 def ensure_dirs(output_root: Path) -> dict[str, Path]:
 	output_root.mkdir(parents=True, exist_ok=True)
 	openvoice_out = output_root / "openvoice"
-	vevostyle_out = output_root / "vevostyle"
+	seedvc_out = output_root / "seed_vc"
 	openvoice_out.mkdir(parents=True, exist_ok=True)
-	vevostyle_out.mkdir(parents=True, exist_ok=True)
+	seedvc_out.mkdir(parents=True, exist_ok=True)
 	return {
 		"output_root": output_root,
 		"openvoice": openvoice_out,
-		"vevostyle": vevostyle_out,
+		"seedvc": seedvc_out,
 	}
+
+
+def _move_single_wav(*, from_dir: Path, to_path: Path) -> None:
+	from_dir = from_dir.expanduser().resolve()
+	to_path = to_path.expanduser().resolve()
+	if not from_dir.exists():
+		raise FileNotFoundError(f"Missing expected SeedVC output directory: {from_dir}")
+	wavs = [p for p in from_dir.glob("*.wav") if p.is_file()]
+	if not wavs:
+		raise FileNotFoundError(f"SeedVC did not produce any .wav under: {from_dir}")
+	produced = max(wavs, key=lambda p: p.stat().st_mtime)
+	to_path.parent.mkdir(parents=True, exist_ok=True)
+	shutil.move(str(produced), str(to_path))
 
 
 def orchestrate(
 	*,
 	openvoice_env: str,
-	vevo_env: str,
+	seedvc_env: str,
 	reference_wav_dir: Path,
 	source_wav_dir: Path,
 	reference_metadata_csv: Path,
 	english_sources_csv: Path,
 	output_root: Path,
+	seedvc_diffusion_steps: int = 30,
+	seedvc_length_adjust: float = 1.0,
+	seedvc_inference_cfg_rate: float = 0.7,
+	seedvc_f0_condition: bool = False,
+	seedvc_auto_f0_adjust: bool = False,
+	seedvc_semi_tone_shift: int = 0,
+	seedvc_fp16: bool = True,
+	seedvc_checkpoint: str | None = None,
+	seedvc_config: str | None = None,
 	run_openvoice: bool = True,
-	run_vevostyle: bool = True,
+	run_seedvc: bool = True,
 ) -> None:
 	repo_root = _repo_root()
 	dirs = ensure_dirs(output_root)
@@ -215,49 +237,80 @@ def orchestrate(
 				_run(argv, cwd=repo_root)
 
 	# ---------
-	# VevoStyle (gender-matched pairs only)
+	# SeedVC (gender-matched pairs only)
 	# ---------
-	if not run_vevostyle:
+	if not run_seedvc:
 		return
 
 	for ref_wav in inputs.reference_wavs:
 		ref_g = timbre_gender.get(ref_wav.stem, "unknown")
 		if ref_g == "unknown":
-			print(f"[VevoStyle] skip timbre={ref_wav.stem} (unknown gender in metadata)")
+			print(f"[SeedVC] skip timbre={ref_wav.stem} (unknown gender in metadata)")
 			continue
 
 		for src_wav in inputs.source_wavs:
 			src_g = style_gender.get(src_wav.stem, "unknown")
 			if src_g == "unknown":
-				print(f"[VevoStyle] skip style={src_wav.stem} (unknown gender in english_source_speakers)")
+				print(f"[SeedVC] skip style={src_wav.stem} (unknown gender in english_source_speakers)")
 				continue
 
 			if src_g != ref_g:
 				print(
-					f"[VevoStyle] skip pair (gender mismatch): timbre={ref_wav.stem}({ref_g}) style={src_wav.stem}({src_g})"
+					f"[SeedVC] skip pair (gender mismatch): timbre={ref_wav.stem}({ref_g}) style={src_wav.stem}({src_g})"
 				)
 				continue
 
+			tmp_dir = (dirs["output_root"] / "_tmp_seedvc" / f"{ref_wav.stem}__{src_wav.stem}").resolve()
+			if tmp_dir.exists():
+				shutil.rmtree(tmp_dir)
+			tmp_dir.mkdir(parents=True, exist_ok=True)
+
+			seed_vc_root = (repo_root / "seed-vc").resolve()
+			inference_py = seed_vc_root / "inference.py"
+			if not inference_py.exists():
+				raise FileNotFoundError(f"Missing SeedVC inference script: {inference_py}")
+
 			argv = (
-				_conda_python_argv(vevo_env)
+				_conda_python_argv(seedvc_env)
 				+ [
-					str(self_script),
-					"--mode",
-					"vevostyle-child",
-					"--reference-wav",
-					str(ref_wav),
-					"--source-wav",
+					str(inference_py.name),
+					"--source",
 					str(src_wav),
-					"--output-root",
-					str(dirs["output_root"]),
+					"--target",
+					str(ref_wav),
+					"--output",
+					str(tmp_dir),
+					"--diffusion-steps",
+					str(int(seedvc_diffusion_steps)),
+					"--length-adjust",
+					str(float(seedvc_length_adjust)),
+					"--inference-cfg-rate",
+					str(float(seedvc_inference_cfg_rate)),
+					"--f0-condition",
+					"True" if seedvc_f0_condition else "False",
+					"--auto-f0-adjust",
+					"True" if seedvc_auto_f0_adjust else "False",
+					"--semi-tone-shift",
+					str(int(seedvc_semi_tone_shift)),
+					"--fp16",
+					"True" if seedvc_fp16 else "False",
 				]
 			)
-			print(f"\n[VevoStyle] timbre={ref_wav.stem}({ref_g}) style={src_wav.stem}({src_g})")
+			if seedvc_checkpoint:
+				argv += ["--checkpoint", str(seedvc_checkpoint)]
+			if seedvc_config:
+				argv += ["--config", str(seedvc_config)]
+			print(f"\n[SeedVC] timbre={ref_wav.stem}({ref_g}) style={src_wav.stem}({src_g})")
 			try:
-				_run(argv, cwd=repo_root)
+				_run(argv, cwd=seed_vc_root)
+				out_wav = dirs["seedvc"] / (
+					f"timbre-{_sanitize_filename(ref_wav.stem)}__source-{_sanitize_filename(src_wav.stem)}__seed_vc.wav"
+				)
+				_move_single_wav(from_dir=tmp_dir, to_path=out_wav)
+				print(f"[seedvc] Wrote: {out_wav}")
 			except subprocess.CalledProcessError as e:
 				print(
-					"[VevoStyle] ERROR (continuing). Pair failed: "
+					"[SeedVC] ERROR (continuing). Pair failed: "
 					f"timbre={ref_wav.stem} style={src_wav.stem} exit_code={e.returncode}",
 					file=sys.stderr,
 				)
@@ -333,167 +386,75 @@ def openvoice_child(*, reference_wav: Path, source_wav: Path, output_root: Path)
 	print(f"[openvoice] Wrote converted: {out_wav}")
 
 
-def vevostyle_child(*, reference_wav: Path, source_wav: Path, output_root: Path) -> None:
-	"""Run one VevoStyle conversion (under the vevo conda env)."""
-
-	repo_root = _repo_root()
-	amphion_root = repo_root / "Amphion"
-	if not amphion_root.exists():
-		raise FileNotFoundError(f"Missing Amphion directory: {amphion_root}")
-
-	reference_wav = reference_wav.expanduser().resolve()
-	source_wav = source_wav.expanduser().resolve()
-	if not reference_wav.exists():
-		raise FileNotFoundError(f"Missing reference wav: {reference_wav}")
-	if not source_wav.exists():
-		raise FileNotFoundError(f"Missing source wav: {source_wav}")
-
-	dirs = ensure_dirs(output_root.expanduser().resolve())
-
-	# Amphion expects relative paths like ./models/... so run from Amphion root.
-	os.chdir(amphion_root)
-	sys.path.insert(0, str(amphion_root))
-
-	import torch
-	from huggingface_hub import snapshot_download
-
-	from models.vc.vevo.vevo_utils import VevoInferencePipeline, save_audio  # type: ignore[import-not-found]
-
-	device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-	# Download checkpoints (if needed) into Amphion/ckpts/Vevo
-	local_dir = snapshot_download(
-		repo_id="amphion/Vevo",
-		repo_type="model",
-		cache_dir="./ckpts/Vevo",
-		allow_patterns=["tokenizer/vq32/*"],
-	)
-	content_tokenizer_ckpt_path = os.path.join(local_dir, "tokenizer/vq32/hubert_large_l18_c32.pkl")
-
-	local_dir = snapshot_download(
-		repo_id="amphion/Vevo",
-		repo_type="model",
-		cache_dir="./ckpts/Vevo",
-		allow_patterns=["tokenizer/vq8192/*"],
-	)
-	content_style_tokenizer_ckpt_path = os.path.join(local_dir, "tokenizer/vq8192")
-
-	local_dir = snapshot_download(
-		repo_id="amphion/Vevo",
-		repo_type="model",
-		cache_dir="./ckpts/Vevo",
-		allow_patterns=["contentstyle_modeling/Vq32ToVq8192/*"],
-	)
-	ar_cfg_path = "./models/vc/vevo/config/Vq32ToVq8192.json"
-	ar_ckpt_path = os.path.join(local_dir, "contentstyle_modeling/Vq32ToVq8192")
-
-	local_dir = snapshot_download(
-		repo_id="amphion/Vevo",
-		repo_type="model",
-		cache_dir="./ckpts/Vevo",
-		allow_patterns=["acoustic_modeling/Vq8192ToMels/*"],
-	)
-	fmt_cfg_path = "./models/vc/vevo/config/Vq8192ToMels.json"
-	fmt_ckpt_path = os.path.join(local_dir, "acoustic_modeling/Vq8192ToMels")
-
-	local_dir = snapshot_download(
-		repo_id="amphion/Vevo",
-		repo_type="model",
-		cache_dir="./ckpts/Vevo",
-		allow_patterns=["acoustic_modeling/Vocoder/*"],
-	)
-	vocoder_cfg_path = "./models/vc/vevo/config/Vocoder.json"
-	vocoder_ckpt_path = os.path.join(local_dir, "acoustic_modeling/Vocoder")
-
-	pipeline = VevoInferencePipeline(
-		content_tokenizer_ckpt_path=content_tokenizer_ckpt_path,
-		content_style_tokenizer_ckpt_path=content_style_tokenizer_ckpt_path,
-		ar_cfg_path=ar_cfg_path,
-		ar_ckpt_path=ar_ckpt_path,
-		fmt_cfg_path=fmt_cfg_path,
-		fmt_ckpt_path=fmt_ckpt_path,
-		vocoder_cfg_path=vocoder_cfg_path,
-		vocoder_ckpt_path=vocoder_ckpt_path,
-		device=device,
-	)
-
-	# -----------------------------------------------------------------
-	# Patch Amphion AR generation limits (no repo modifications)
-	# -----------------------------------------------------------------
-	# Amphion's AR model defaults to max_length=2000, but some of our VC inputs
-	# exceed that length, causing Transformers to throw:
-	#   ValueError: Input length ... but `max_length` is set to 2000
-	# We monkeypatch the instance method to automatically increase max_length.
-	orig_generate = pipeline.ar_model.generate
-
-	def patched_generate(*args, **kwargs):
-		# Support both positional and keyword calls.
-		if args:
-			input_ids = args[0]
-			prompt_mels = args[1] if len(args) > 1 else kwargs.get("prompt_mels")
-			prompt_output_ids = args[2] if len(args) > 2 else kwargs.get("prompt_output_ids")
-		else:
-			input_ids = kwargs.get("input_ids")
-			prompt_mels = kwargs.get("prompt_mels")
-			prompt_output_ids = kwargs.get("prompt_output_ids")
-
-		max_length = int(kwargs.get("max_length", 2000))
-		min_new_tokens = int(kwargs.get("min_new_tokens", 50))
-
-		# Compute a conservative lower bound on the effective input length.
-		input_len = int(getattr(input_ids, "shape", [1, 0])[1]) if input_ids is not None else 0
-		prompt_len = int(getattr(prompt_output_ids, "shape", [1, 0])[1]) if prompt_output_ids is not None else 0
-		# Non-global-style path concatenates input_ids + prompt_output_ids.
-		effective_input_len = input_len + prompt_len
-		# Global-style path also appends a style token; add a small cushion always.
-		min_required = effective_input_len + max(256, min_new_tokens)
-		if max_length < min_required:
-			max_length = min_required
-
-		# Call original with normalized kwargs.
-		return orig_generate(
-			input_ids=input_ids,
-			prompt_mels=prompt_mels,
-			prompt_output_ids=prompt_output_ids,
-			max_length=max_length,
-			temperature=kwargs.get("temperature", 0.8),
-			top_k=kwargs.get("top_k", 50),
-			top_p=kwargs.get("top_p", 0.9),
-			repeat_penalty=kwargs.get("repeat_penalty", 1.0),
-			min_new_tokens=min_new_tokens,
-		)
-
-	# Bind patched method onto this pipeline instance.
-	pipeline.ar_model.generate = patched_generate
-
-	gen_audio = pipeline.inference_ar_and_fm(
-		src_wav_path=str(source_wav),
-		src_text=None,
-		style_ref_wav_path=str(source_wav),
-		timbre_ref_wav_path=str(reference_wav),
-	)
-
-	out_wav = dirs["vevostyle"] / (
-		f"timbre-{_sanitize_filename(reference_wav.stem)}__style-{_sanitize_filename(source_wav.stem)}.wav"
-	)
-	save_audio(gen_audio, output_path=str(out_wav))
-	if not out_wav.exists() or out_wav.stat().st_size == 0:
-		raise RuntimeError("[vevostyle] Inference did not create expected wav")
-	print(f"[vevostyle] Wrote: {out_wav}")
-
-
 def build_arg_parser() -> argparse.ArgumentParser:
-	p = argparse.ArgumentParser(description="Run OpenVoice + VevoStyle (single entrypoint)")
+	p = argparse.ArgumentParser(description="Run OpenVoice + SeedVC (single entrypoint)")
 
 	p.add_argument(
 		"--mode",
-		choices=("run", "openvoice-only", "vevostyle-only", "openvoice-child", "vevostyle-child"),
+		choices=("run", "openvoice-only", "seedvc-only", "openvoice-child"),
 		default="run",
 		help="Parent orchestrator (run) or child mode (runs inside model conda env)",
 	)
 
 	p.add_argument("--openvoice-env", default=os.environ.get("OPENVOICE_ENV", "openvoice"))
-	p.add_argument("--vevo-env", default=os.environ.get("VEVO_ENV", "vevo"))
+	p.add_argument("--seedvc-env", default=os.environ.get("SEEDVC_ENV", "seed"))
+
+	# SeedVC quality knobs (passed through to seed-vc/inference.py)
+	p.add_argument(
+		"--seedvc-diffusion-steps",
+		type=int,
+		default=30,
+		help="SeedVC diffusion steps. 30–50 best quality; 4–10 fastest.",
+	)
+	p.add_argument(
+		"--seedvc-length-adjust",
+		type=float,
+		default=1.0,
+		help="SeedVC length adjustment factor (<1 faster, >1 slower).",
+	)
+	p.add_argument(
+		"--seedvc-inference-cfg-rate",
+		type=float,
+		default=0.7,
+		help="SeedVC inference CFG rate (subtle effect).",
+	)
+	def _str2bool(v: str) -> bool:
+		return str(v).strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+	p.add_argument(
+		"--seedvc-f0-condition",
+		type=_str2bool,
+		default=False,
+		help="SeedVC f0 conditioning (mainly for singing voice conversion).",
+	)
+	p.add_argument(
+		"--seedvc-auto-f0-adjust",
+		type=_str2bool,
+		default=False,
+		help="SeedVC auto F0 adjust (normally not used for singing VC).",
+	)
+	p.add_argument(
+		"--seedvc-semi-tone-shift",
+		type=int,
+		default=0,
+		help="SeedVC pitch shift in semitones (singing VC).",
+	)
+	p.add_argument(
+		"--seedvc-fp16",
+		type=_str2bool,
+		default=True,
+		help="SeedVC fp16 flag. On Apple Silicon (mps), True/False may behave similarly.",
+	)
+	p.add_argument(
+		"--seedvc-checkpoint",
+		default=None,
+		help="Optional SeedVC checkpoint path (defaults to auto-download).",
+	)
+	p.add_argument(
+		"--seedvc-config",
+		default=None,
+		help="Optional SeedVC config path (defaults to auto-download).",
+	)
 
 	p.add_argument("--reference-wav-dir", default=str(_repo_root() / "reference_wav"))
 	p.add_argument("--source-wav-dir", default=str(_repo_root() / "source_wav"))
@@ -522,42 +483,69 @@ def main() -> None:
 	if args.mode == "run":
 		orchestrate(
 			openvoice_env=args.openvoice_env,
-			vevo_env=args.vevo_env,
+			seedvc_env=args.seedvc_env,
 			reference_wav_dir=Path(args.reference_wav_dir),
 			source_wav_dir=Path(args.source_wav_dir),
 			reference_metadata_csv=Path(args.reference_metadata_csv),
 			english_sources_csv=Path(args.english_sources_csv),
 			output_root=output_root,
+			seedvc_diffusion_steps=args.seedvc_diffusion_steps,
+			seedvc_length_adjust=args.seedvc_length_adjust,
+			seedvc_inference_cfg_rate=args.seedvc_inference_cfg_rate,
+			seedvc_f0_condition=args.seedvc_f0_condition,
+			seedvc_auto_f0_adjust=args.seedvc_auto_f0_adjust,
+			seedvc_semi_tone_shift=args.seedvc_semi_tone_shift,
+			seedvc_fp16=args.seedvc_fp16,
+			seedvc_checkpoint=(args.seedvc_checkpoint or None),
+			seedvc_config=(args.seedvc_config or None),
 			run_openvoice=True,
-			run_vevostyle=True,
+			run_seedvc=True,
 		)
 		return
 
 	if args.mode == "openvoice-only":
 		orchestrate(
 			openvoice_env=args.openvoice_env,
-			vevo_env=args.vevo_env,
+			seedvc_env=args.seedvc_env,
 			reference_wav_dir=Path(args.reference_wav_dir),
 			source_wav_dir=Path(args.source_wav_dir),
 			reference_metadata_csv=Path(args.reference_metadata_csv),
 			english_sources_csv=Path(args.english_sources_csv),
 			output_root=output_root,
+			seedvc_diffusion_steps=args.seedvc_diffusion_steps,
+			seedvc_length_adjust=args.seedvc_length_adjust,
+			seedvc_inference_cfg_rate=args.seedvc_inference_cfg_rate,
+			seedvc_f0_condition=args.seedvc_f0_condition,
+			seedvc_auto_f0_adjust=args.seedvc_auto_f0_adjust,
+			seedvc_semi_tone_shift=args.seedvc_semi_tone_shift,
+			seedvc_fp16=args.seedvc_fp16,
+			seedvc_checkpoint=(args.seedvc_checkpoint or None),
+			seedvc_config=(args.seedvc_config or None),
 			run_openvoice=True,
-			run_vevostyle=False,
+			run_seedvc=False,
 		)
 		return
 
-	if args.mode == "vevostyle-only":
+	if args.mode == "seedvc-only":
 		orchestrate(
 			openvoice_env=args.openvoice_env,
-			vevo_env=args.vevo_env,
+			seedvc_env=args.seedvc_env,
 			reference_wav_dir=Path(args.reference_wav_dir),
 			source_wav_dir=Path(args.source_wav_dir),
 			reference_metadata_csv=Path(args.reference_metadata_csv),
 			english_sources_csv=Path(args.english_sources_csv),
 			output_root=output_root,
+			seedvc_diffusion_steps=args.seedvc_diffusion_steps,
+			seedvc_length_adjust=args.seedvc_length_adjust,
+			seedvc_inference_cfg_rate=args.seedvc_inference_cfg_rate,
+			seedvc_f0_condition=args.seedvc_f0_condition,
+			seedvc_auto_f0_adjust=args.seedvc_auto_f0_adjust,
+			seedvc_semi_tone_shift=args.seedvc_semi_tone_shift,
+			seedvc_fp16=args.seedvc_fp16,
+			seedvc_checkpoint=(args.seedvc_checkpoint or None),
+			seedvc_config=(args.seedvc_config or None),
 			run_openvoice=False,
-			run_vevostyle=True,
+			run_seedvc=True,
 		)
 		return
 
@@ -565,16 +553,6 @@ def main() -> None:
 		if not args.reference_wav or not args.source_wav:
 			raise SystemExit("openvoice-child requires --reference-wav and --source-wav")
 		openvoice_child(
-			reference_wav=Path(args.reference_wav),
-			source_wav=Path(args.source_wav),
-			output_root=output_root,
-		)
-		return
-
-	if args.mode == "vevostyle-child":
-		if not args.reference_wav or not args.source_wav:
-			raise SystemExit("vevostyle-child requires --reference-wav and --source-wav")
-		vevostyle_child(
 			reference_wav=Path(args.reference_wav),
 			source_wav=Path(args.source_wav),
 			output_root=output_root,

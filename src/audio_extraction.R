@@ -111,52 +111,57 @@ data_dir <- "data"
 dir.create(audio_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
-all_speakers_df <- pmap_dfr(
-  list(
-    speaker_links$full_url,
-    speaker_links$speaker_text,
-    speaker_links$language
-  ),
-  \(speaker_url, speaker_name, language) {
-    message("Processing: ", speaker_name, " (", language, ")")
-
-    tryCatch(
-      process_speaker(
-        speaker_url = speaker_url,
-        speaker_name = speaker_name,
-        language = language,
-        base_url = base_url,
-        audio_dir = audio_dir
-      ),
-      error = function(e) {
-        message("FAILED: ", speaker_name, " | URL: ", speaker_url)
-        message("ERROR: ", conditionMessage(e))
-
-        tibble(
-          language = language,
-          speaker_name = speaker_name,
-          speaker_url = speaker_url,
-          birth_place = NA_character_,
-          native_language = NA_character_,
-          other_languages = NA_character_,
-          age_sex = NA_character_,
-          age_onset = NA_character_,
-          learning_method = NA_character_,
-          english_residence = NA_character_,
-          length_residence = NA_character_,
-          mp3_url = NA_character_,
-          mp3_file = NA_character_
-        )
-      }
-    )
-  }
-)
-
 csv_path <- file.path(data_dir, "accent_archive_metadata.csv")
-write_csv(all_speakers_df, csv_path)
 
-print(csv_path)
-print(nrow(all_speakers_df))
+if (file.exists(csv_path)) {
+  message("Found existing ", csv_path, "; skipping reference extraction.")
+  all_speakers_df <- read_csv(csv_path, show_col_types = FALSE)
+} else {
+  all_speakers_df <- pmap_dfr(
+    list(
+      speaker_links$full_url,
+      speaker_links$speaker_text,
+      speaker_links$language
+    ),
+    \(speaker_url, speaker_name, language) {
+      message("Processing: ", speaker_name, " (", language, ")")
+
+      tryCatch(
+        process_speaker(
+          speaker_url = speaker_url,
+          speaker_name = speaker_name,
+          language = language,
+          base_url = base_url,
+          audio_dir = audio_dir
+        ),
+        error = function(e) {
+          message("FAILED: ", speaker_name, " | URL: ", speaker_url)
+          message("ERROR: ", conditionMessage(e))
+
+          tibble(
+            language = language,
+            speaker_name = speaker_name,
+            speaker_url = speaker_url,
+            birth_place = NA_character_,
+            native_language = NA_character_,
+            other_languages = NA_character_,
+            age_sex = NA_character_,
+            age_onset = NA_character_,
+            learning_method = NA_character_,
+            english_residence = NA_character_,
+            length_residence = NA_character_,
+            mp3_url = NA_character_,
+            mp3_file = NA_character_
+          )
+        }
+      )
+    }
+  )
+
+  write_csv(all_speakers_df, csv_path)
+  print(csv_path)
+  print(nrow(all_speakers_df))
+}
 
 
 # ----------------------------
@@ -278,16 +283,25 @@ english_candidates <- english_candidates %>%
     )
   ) %>%
   filter(
-    str_detect(birth_place_lower, "usa"),
+    str_detect(birth_place_lower, "california"),
     sex %in% c("male", "female"),
     !is.na(mp3_url)
   )
 
 set.seed(42)
 
+pick_one_by_sex <- function(df, sex_label) {
+  df2 <- df %>% filter(sex == sex_label)
+  if (nrow(df2) == 0) {
+    message("No English candidates found for sex=", sex_label, " after filtering.")
+    return(df2)
+  }
+  df2 %>% slice_sample(n = 1)
+}
+
 english_source_speakers <- bind_rows(
-  english_candidates %>% filter(sex == "male") %>% slice_sample(n = 1),
-  english_candidates %>% filter(sex == "female") %>% slice_sample(n = 1)
+  pick_one_by_sex(english_candidates, "male"),
+  pick_one_by_sex(english_candidates, "female")
 ) %>%
   mutate(
     mp3_file = pmap_chr(
