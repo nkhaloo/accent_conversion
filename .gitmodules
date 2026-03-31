@@ -4,3 +4,6 @@
 [submodule "Amphion"]
 	path = Amphion
 	url = https://github.com/nkhaloo/Amphion.git
+[submodule "seed-vc"]
+	path = seed-vc
+	url = https://github.com/nkhaloo/seed-vc.git
