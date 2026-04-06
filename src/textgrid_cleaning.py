@@ -111,13 +111,13 @@ def process_textgrid_folder(
 
 if __name__ == "__main__":
     process_textgrid_folder(
-        Path("reference_textgrids"),
-        Path("reference_textgrids_cleaned"),
+        Path("output/openvoice/textgrids"),
+        Path("output/openvoice/textgrids_cleaned"),
         keep_from_tier_index=1,
     )
 
     process_textgrid_folder(
-        Path("source_textgrids"),
-        Path("source_textgrids_cleaned"),
+        Path("output/seed_vc/textgrids"),
+        Path("output/seed_vc/textgrids_cleaned"),
         keep_from_tier_index=1,
     )
