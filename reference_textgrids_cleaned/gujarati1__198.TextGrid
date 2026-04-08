@@ -66,10 +66,10 @@ item []:
             text = "" 
         intervals [14]:
             xmin = 3.29 
-            xmax = 3.49 
+            xmax = 3.4665872483183926 
             text = "ER1" 
         intervals [15]:
-            xmin = 3.49 
+            xmin = 3.4665872483183926 
             xmax = 3.79 
             text = "" 
         intervals [16]:
