@@ -251,11 +251,11 @@ item []:
         intervals [60]:
             xmin = 7.92 
             xmax = 8 
-            text = "L" 
+            text = "L_slabs" 
         intervals [61]:
             xmin = 8 
             xmax = 8.12 
-            text = "AE1" 
+            text = "AE1_slabs" 
         intervals [62]:
             xmin = 8.12 
             xmax = 8.26 
@@ -263,7 +263,7 @@ item []:
         intervals [63]:
             xmin = 8.26 
             xmax = 8.36 
-            text = "AH1" 
+            text = "AH1_of" 
         intervals [64]:
             xmin = 8.36 
             xmax = 8.54 
@@ -271,11 +271,11 @@ item []:
         intervals [65]:
             xmin = 8.54 
             xmax = 8.61 
-            text = "L" 
+            text = "L_blue" 
         intervals [66]:
             xmin = 8.61 
             xmax = 8.7 
-            text = "UW1" 
+            text = "UW1_blue" 
         intervals [67]:
             xmin = 8.7 
             xmax = 8.83 
@@ -283,7 +283,7 @@ item []:
         intervals [68]:
             xmin = 8.83 
             xmax = 9 
-            text = "IY1" 
+            text = "IY1_cheese" 
         intervals [69]:
             xmin = 9 
             xmax = 9.41 
@@ -291,11 +291,11 @@ item []:
         intervals [70]:
             xmin = 9.41 
             xmax = 9.48 
-            text = "AE1" 
+            text = "AE1_and" 
         intervals [71]:
             xmin = 9.48 
             xmax = 9.54 
-            text = "N" 
+            text = "N_and" 
         intervals [72]:
             xmin = 9.54 
             xmax = 9.57 
