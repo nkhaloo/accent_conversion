@@ -51,7 +51,7 @@ item []:
         intervals [10]:
             xmin = 1.81 
             xmax = 1.99 
-            text = "AH0_Stella" 
+            text = "AX0_Stella" 
         intervals [11]:
             xmin = 1.99 
             xmax = 2.22 
@@ -70,10 +70,10 @@ item []:
             text = "ER0_her" 
         intervals [15]:
             xmin = 2.77 
-            xmax = 3.39 
+            xmax = 3.394351148792163 
             text = "" 
         intervals [16]:
-            xmin = 3.39 
+            xmin = 3.394351148792163 
             xmax = 3.46 
             text = "UW1_to" 
         intervals [17]:
@@ -134,10 +134,10 @@ item []:
             text = "ER1_her" 
         intervals [31]:
             xmin = 5.16 
-            xmax = 5.27 
+            xmax = 5.276947038786985 
             text = "" 
         intervals [32]:
-            xmin = 5.27 
+            xmin = 5.276947038786985 
             xmax = 5.31 
             text = "R_from" 
         intervals [33]:
