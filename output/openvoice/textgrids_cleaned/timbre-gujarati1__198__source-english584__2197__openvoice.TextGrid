@@ -54,14 +54,14 @@ item []:
             text = "AH0_Stella" 
         intervals [11]:
             xmin = 1.506535084604345 
-            xmax = 2.38 
+            xmax = 2.390355090161652 
             text = "" 
         intervals [12]:
-            xmin = 2.38 
-            xmax = 2.52 
-            text = "AE1" 
+            xmin = 2.390355090161652 
+            xmax = 2.5438577328793692 
+            text = "AE1_ask" 
         intervals [13]:
-            xmin = 2.52 
+            xmin = 2.5438577328793692 
             xmax = 2.71 
             text = "" 
         intervals [14]:
