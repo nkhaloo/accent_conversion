@@ -75,7 +75,7 @@ item []:
         intervals [16]:
             xmin = 3.27 
             xmax = 3.34 
-            text = "AH0_to" 
+            text = "UW0_to" 
         intervals [17]:
             xmin = 3.34 
             xmax = 3.45 
@@ -154,10 +154,10 @@ item []:
             text = "" 
         intervals [36]:
             xmin = 5.56 
-            xmax = 5.61 
+            xmax = 5.596763552676394 
             text = "AH0_the" 
         intervals [37]:
-            xmin = 5.61 
+            xmin = 5.596763552676394 
             xmax = 5.79 
             text = "" 
         intervals [38]:
@@ -374,10 +374,10 @@ item []:
             text = "ER0_brother" 
         intervals [91]:
             xmin = 13.93 
-            xmax = 14.04 
+            xmax = 14.050934393299341 
             text = "" 
         intervals [92]:
-            xmin = 14.04 
+            xmin = 14.050934393299341 
             xmax = 14.27 
             text = "AA1_Bob" 
         intervals [93]:
@@ -563,7 +563,7 @@ item []:
         intervals [138]:
             xmin = 20.84 
             xmax = 20.9 
-            text = "AH0_can" 
+            text = "AE0_can" 
         intervals [139]:
             xmin = 20.9 
             xmax = 20.950001 
@@ -615,7 +615,7 @@ item []:
         intervals [151]:
             xmin = 22.610001 
             xmax = 22.690001 
-            text = "AH0_into" 
+            text = "UW0_into" 
         intervals [152]:
             xmin = 22.690001 
             xmax = 22.879999 

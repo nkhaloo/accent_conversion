@@ -54,10 +54,10 @@ item []:
             text = "AH0_Stella" 
         intervals [11]:
             xmin = 1.81 
-            xmax = 2.36 
+            xmax = 2.2892986122216774 
             text = "" 
         intervals [12]:
-            xmin = 2.36 
+            xmin = 2.2892986122216774 
             xmax = 2.4 
             text = "AE1_Ask" 
         intervals [13]:
@@ -75,7 +75,7 @@ item []:
         intervals [16]:
             xmin = 2.8 
             xmax = 2.84 
-            text = "AH0_to" 
+            text = "UW0_to" 
         intervals [17]:
             xmin = 2.84 
             xmax = 2.97 
@@ -258,10 +258,10 @@ item []:
             text = "" 
         intervals [62]:
             xmin = 9.33 
-            xmax = 9.36 
+            xmax = 9.391923667138892 
             text = "AH0_of" 
         intervals [63]:
-            xmin = 9.36 
+            xmin = 9.391923667138892 
             xmax = 9.47 
             text = "" 
         intervals [64]:
@@ -274,10 +274,10 @@ item []:
             text = "UW1_blue" 
         intervals [66]:
             xmin = 9.65 
-            xmax = 9.82 
+            xmax = 9.839072562587772 
             text = "" 
         intervals [67]:
-            xmin = 9.82 
+            xmin = 9.839072562587772 
             xmax = 9.97 
             text = "IY1_cheese" 
         intervals [68]:
@@ -287,7 +287,7 @@ item []:
         intervals [69]:
             xmin = 10.56 
             xmax = 10.63 
-            text = "AH0_and" 
+            text = "AE0_and" 
         intervals [70]:
             xmin = 10.63 
             xmax = 10.67 
@@ -394,10 +394,10 @@ item []:
             text = "AO1_also" 
         intervals [96]:
             xmin = 13.69 
-            xmax = 13.8 
+            xmax = 13.785937423150584 
             text = "L_also" 
         intervals [97]:
-            xmin = 13.8 
+            xmin = 13.785937423150584 
             xmax = 13.91 
             text = "" 
         intervals [98]:
@@ -475,7 +475,7 @@ item []:
         intervals [116]:
             xmin = 16.6 
             xmax = 16.639999 
-            text = "AH0_and" 
+            text = "AE0_and" 
         intervals [117]:
             xmin = 16.639999 
             xmax = 16.67 
@@ -550,12 +550,12 @@ item []:
             text = "IY1_She" 
         intervals [135]:
             xmin = 19.4 
-            xmax = 19.450001 
+            xmax = 19.443993640597476 
             text = "" 
         intervals [136]:
-            xmin = 19.450001 
+            xmin = 19.443993640597476 
             xmax = 19.48 
-            text = "AH0_can" 
+            text = "AE0_can" 
         intervals [137]:
             xmin = 19.48 
             xmax = 19.57 
