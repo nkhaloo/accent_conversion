@@ -30,18 +30,18 @@ item []:
             text = "" 
         intervals [5]:
             xmin = 1.41 
-            xmax = 1.51 
+            xmax = 1.5496170587059659 
             text = "AA1_call" 
         intervals [6]:
-            xmin = 1.51 
+            xmin = 1.5496170587059659 
             xmax = 1.67 
             text = "L_call" 
         intervals [7]:
             xmin = 1.67 
-            xmax = 1.88 
+            xmax = 1.8642229793082499 
             text = "" 
         intervals [8]:
-            xmin = 1.88 
+            xmin = 1.8642229793082499 
             xmax = 1.97 
             text = "EH1_Stella" 
         intervals [9]:
@@ -226,10 +226,10 @@ item []:
             text = "" 
         intervals [54]:
             xmin = 8.79 
-            xmax = 9.1 
+            xmax = 9.08926141458729 
             text = "IY1_peas" 
         intervals [55]:
-            xmin = 9.1 
+            xmin = 9.08926141458729 
             xmax = 9.55 
             text = "" 
         intervals [56]:
@@ -483,7 +483,7 @@ item []:
         intervals [118]:
             xmin = 20.559999 
             xmax = 20.73 
-            text = "AH0_and" 
+            text = "AE0_and" 
         intervals [119]:
             xmin = 20.73 
             xmax = 20.82 
@@ -622,10 +622,10 @@ item []:
             text = "UW1_into" 
         intervals [153]:
             xmin = 27.92 
-            xmax = 28.08 
+            xmax = 28.08971783095058 
             text = "" 
         intervals [154]:
-            xmin = 28.08 
+            xmin = 28.08971783095058 
             xmax = 28.110001 
             text = "R_three" 
         intervals [155]:
@@ -678,10 +678,10 @@ item []:
             text = "W_will" 
         intervals [167]:
             xmin = 30.030001 
-            xmax = 30.16 
+            xmax = 30.14369591996582 
             text = "IH1_will" 
         intervals [168]:
-            xmin = 30.16 
+            xmin = 30.14369591996582 
             xmax = 30.190001 
             text = "L_will" 
         intervals [169]:
@@ -746,10 +746,10 @@ item []:
             text = "AE1_at" 
         intervals [184]:
             xmin = 32.950001 
-            xmax = 32.98 
+            xmax = 33.12055331133043 
             text = "" 
         intervals [185]:
-            xmin = 32.98 
+            xmin = 33.12055331133043 
             xmax = 33.290001 
             text = "AH0_the" 
         intervals [186]:
