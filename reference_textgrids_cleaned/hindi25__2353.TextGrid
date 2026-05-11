@@ -75,7 +75,7 @@ item []:
         intervals [16]:
             xmin = 2.81 
             xmax = 2.87 
-            text = "AH0_to" 
+            text = "UW0_to" 
         intervals [17]:
             xmin = 2.87 
             xmax = 2.97 
@@ -194,10 +194,10 @@ item []:
             text = "" 
         intervals [46]:
             xmin = 6.18 
-            xmax = 6.26 
+            xmax = 6.239687852527095 
             text = "AH1_of" 
         intervals [47]:
-            xmin = 6.26 
+            xmin = 6.239687852527095 
             xmax = 6.43 
             text = "" 
         intervals [48]:
@@ -366,10 +366,10 @@ item []:
             text = "AH1_brother" 
         intervals [89]:
             xmin = 11.94 
-            xmax = 12.04 
+            xmax = 12.02472453927689 
             text = "" 
         intervals [90]:
-            xmin = 12.04 
+            xmin = 12.02472453927689 
             xmax = 12.11 
             text = "ER0_brother" 
         intervals [91]:
@@ -559,7 +559,7 @@ item []:
         intervals [137]:
             xmin = 18.17 
             xmax = 18.24 
-            text = "AH0_can" 
+            text = "AE0_can" 
         intervals [138]:
             xmin = 18.24 
             xmax = 18.309999 
@@ -671,7 +671,7 @@ item []:
         intervals [165]:
             xmin = 21.492501841919964 
             xmax = 21.52 
-            text = "AH0_will" 
+            text = "IH0_will" 
         intervals [166]:
             xmin = 21.52 
             xmax = 21.639999 
@@ -710,10 +710,10 @@ item []:
             text = "EH1_Wednesday" 
         intervals [175]:
             xmin = 22.51 
-            xmax = 22.700001 
+            xmax = 22.63241805149454 
             text = "N_Wednesday" 
         intervals [176]:
-            xmin = 22.700001 
+            xmin = 22.63241805149454 
             xmax = 22.84 
             text = "" 
         intervals [177]:
