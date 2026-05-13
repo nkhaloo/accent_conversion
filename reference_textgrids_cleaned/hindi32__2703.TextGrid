@@ -11,7 +11,7 @@ item []:
         name = "phones" 
         xmin = 0 
         xmax = 26.350438 
-        intervals: size = 191 
+        intervals: size = 190 
         intervals [1]:
             xmin = 0 
             xmax = 0.95 
@@ -34,10 +34,10 @@ item []:
             text = "AA1_call" 
         intervals [6]:
             xmin = 1.51 
-            xmax = 1.59 
+            xmax = 1.5781449018621854 
             text = "L_call" 
         intervals [7]:
-            xmin = 1.59 
+            xmin = 1.5781449018621854 
             xmax = 1.78 
             text = "" 
         intervals [8]:
@@ -186,10 +186,10 @@ item []:
             text = "N_spoons" 
         intervals [44]:
             xmin = 6.78 
-            xmax = 6.86 
+            xmax = 6.9027143347794 
             text = "" 
         intervals [45]:
-            xmin = 6.86 
+            xmin = 6.9027143347794 
             xmax = 6.99 
             text = "AH1_of" 
         intervals [46]:
@@ -198,10 +198,10 @@ item []:
             text = "" 
         intervals [47]:
             xmin = 7.17 
-            xmax = 7.22 
+            xmax = 7.2802072257377475 
             text = "R_fresh" 
         intervals [48]:
-            xmin = 7.22 
+            xmin = 7.2802072257377475 
             xmax = 7.34 
             text = "EH1_fresh" 
         intervals [49]:
@@ -210,10 +210,10 @@ item []:
             text = "" 
         intervals [50]:
             xmin = 7.59 
-            xmax = 7.66 
+            xmax = 7.670638345882136 
             text = "N_snow" 
         intervals [51]:
-            xmin = 7.66 
+            xmin = 7.670638345882136 
             xmax = 7.8 
             text = "OW1_snow" 
         intervals [52]:
@@ -242,14 +242,14 @@ item []:
             text = "IH1_thick" 
         intervals [58]:
             xmin = 9.27 
-            xmax = 9.46 
+            xmax = 9.46694068159471 
             text = "" 
         intervals [59]:
-            xmin = 9.46 
-            xmax = 9.54 
+            xmin = 9.46694068159471 
+            xmax = 9.523580338792852 
             text = "L_slabs" 
         intervals [60]:
-            xmin = 9.54 
+            xmin = 9.523580338792852 
             xmax = 9.7 
             text = "AE1_slabs" 
         intervals [61]:
@@ -287,7 +287,7 @@ item []:
         intervals [69]:
             xmin = 11.19 
             xmax = 11.31 
-            text = "AH0_and" 
+            text = "AE0_and" 
         intervals [70]:
             xmin = 11.31 
             xmax = 11.35 
@@ -518,261 +518,257 @@ item []:
             text = "AA1_frog" 
         intervals [127]:
             xmin = 18.23 
-            xmax = 18.559999 
+            xmax = 18.575860064008673 
             text = "" 
         intervals [128]:
-            xmin = 18.559999 
-            xmax = 18.59 
-            text = "R_for" 
-        intervals [129]:
-            xmin = 18.59 
+            xmin = 18.575860064008673 
             xmax = 18.65 
             text = "ER0_for" 
-        intervals [130]:
+        intervals [129]:
             xmin = 18.65 
             xmax = 18.709999 
             text = "" 
-        intervals [131]:
+        intervals [130]:
             xmin = 18.709999 
             xmax = 18.75 
             text = "AH0_the" 
-        intervals [132]:
+        intervals [131]:
             xmin = 18.75 
             xmax = 18.84 
             text = "" 
-        intervals [133]:
+        intervals [132]:
             xmin = 18.84 
             xmax = 19.01 
             text = "IH1_kids" 
-        intervals [134]:
+        intervals [133]:
             xmin = 19.01 
             xmax = 20.01 
             text = "" 
-        intervals [135]:
+        intervals [134]:
             xmin = 20.01 
             xmax = 20.09 
             text = "IY1_She" 
-        intervals [136]:
+        intervals [135]:
             xmin = 20.09 
             xmax = 20.129999 
             text = "" 
-        intervals [137]:
+        intervals [136]:
             xmin = 20.129999 
             xmax = 20.18 
-            text = "AH0_can" 
-        intervals [138]:
+            text = "AE0_can" 
+        intervals [137]:
             xmin = 20.18 
             xmax = 20.25 
             text = "N_can" 
-        intervals [139]:
+        intervals [138]:
             xmin = 20.25 
             xmax = 20.43 
             text = "" 
-        intervals [140]:
+        intervals [139]:
             xmin = 20.43 
             xmax = 20.58 
             text = "UW1_scoop" 
-        intervals [141]:
+        intervals [140]:
             xmin = 20.58 
             xmax = 20.68 
             text = "" 
-        intervals [142]:
+        intervals [141]:
             xmin = 20.68 
             xmax = 20.799999 
             text = "IY1_these" 
-        intervals [143]:
+        intervals [142]:
             xmin = 20.799999 
             xmax = 20.959999 
             text = "" 
-        intervals [144]:
+        intervals [143]:
             xmin = 20.959999 
             xmax = 21.049999 
             text = "IH1_things" 
-        intervals [145]:
+        intervals [144]:
             xmin = 21.049999 
             xmax = 21.16 
             text = "NG_things" 
-        intervals [146]:
+        intervals [145]:
             xmin = 21.16 
-            xmax = 21.209999 
+            xmax = 21.246639135257546 
             text = "" 
-        intervals [147]:
-            xmin = 21.209999 
+        intervals [146]:
+            xmin = 21.246639135257546 
             xmax = 21.309999 
             text = "IH0_into" 
-        intervals [148]:
+        intervals [147]:
             xmin = 21.309999 
             xmax = 21.360001 
             text = "N_into" 
-        intervals [149]:
+        intervals [148]:
             xmin = 21.360001 
             xmax = 21.4 
             text = "" 
-        intervals [150]:
+        intervals [149]:
             xmin = 21.4 
             xmax = 21.450001 
             text = "UW1_into" 
-        intervals [151]:
+        intervals [150]:
             xmin = 21.450001 
             xmax = 21.6 
             text = "" 
-        intervals [152]:
+        intervals [151]:
             xmin = 21.6 
             xmax = 21.639999 
             text = "R_three" 
-        intervals [153]:
+        intervals [152]:
             xmin = 21.639999 
             xmax = 21.82 
             text = "IY1_three" 
-        intervals [154]:
+        intervals [153]:
             xmin = 21.82 
             xmax = 21.9 
             text = "R_red" 
-        intervals [155]:
+        intervals [154]:
             xmin = 21.9 
             xmax = 22 
             text = "EH1_red" 
-        intervals [156]:
+        intervals [155]:
             xmin = 22 
             xmax = 22.17 
             text = "" 
-        intervals [157]:
+        intervals [156]:
             xmin = 22.17 
             xmax = 22.440001 
             text = "AE1_bags" 
-        intervals [158]:
+        intervals [157]:
             xmin = 22.440001 
             xmax = 22.76 
             text = "" 
-        intervals [159]:
+        intervals [158]:
             xmin = 22.76 
             xmax = 22.83 
-            text = "AH0_and" 
-        intervals [160]:
+            text = "AE0_and" 
+        intervals [159]:
             xmin = 22.83 
             xmax = 22.870001 
             text = "N_and" 
-        intervals [161]:
+        intervals [160]:
             xmin = 22.870001 
             xmax = 22.9 
             text = "" 
-        intervals [162]:
+        intervals [161]:
             xmin = 22.9 
             xmax = 22.93 
             text = "W_we" 
-        intervals [163]:
+        intervals [162]:
             xmin = 22.93 
             xmax = 23.030001 
             text = "IY1_we" 
-        intervals [164]:
+        intervals [163]:
             xmin = 23.030001 
             xmax = 23.1 
             text = "W_will" 
-        intervals [165]:
+        intervals [164]:
             xmin = 23.1 
             xmax = 23.139999 
             text = "IH1_will" 
-        intervals [166]:
+        intervals [165]:
             xmin = 23.139999 
             xmax = 23.209999 
             text = "L_will" 
-        intervals [167]:
+        intervals [166]:
             xmin = 23.209999 
             xmax = 23.32 
             text = "" 
-        intervals [168]:
+        intervals [167]:
             xmin = 23.32 
             xmax = 23.450001 
             text = "OW1_go" 
-        intervals [169]:
+        intervals [168]:
             xmin = 23.450001 
             xmax = 23.559999 
             text = "M_meet" 
-        intervals [170]:
+        intervals [169]:
             xmin = 23.559999 
             xmax = 23.68 
             text = "IY1_meet" 
-        intervals [171]:
+        intervals [170]:
             xmin = 23.68 
             xmax = 23.799999 
             text = "" 
-        intervals [172]:
+        intervals [171]:
             xmin = 23.799999 
             xmax = 23.91 
             text = "ER0_her" 
-        intervals [173]:
+        intervals [172]:
             xmin = 23.91 
             xmax = 23.99 
             text = "W_Wednesday" 
-        intervals [174]:
+        intervals [173]:
             xmin = 23.99 
             xmax = 24.08 
             text = "EH1_Wednesday" 
-        intervals [175]:
+        intervals [174]:
             xmin = 24.08 
-            xmax = 24.219999 
+            xmax = 24.157613488237 
             text = "N_Wednesday" 
-        intervals [176]:
-            xmin = 24.219999 
+        intervals [175]:
+            xmin = 24.157613488237 
             xmax = 24.370001 
             text = "" 
-        intervals [177]:
+        intervals [176]:
             xmin = 24.370001 
             xmax = 24.6 
             text = "IY0_Wednesday" 
-        intervals [178]:
+        intervals [177]:
             xmin = 24.6 
             xmax = 24.629999 
             text = "" 
-        intervals [179]:
+        intervals [178]:
             xmin = 24.629999 
             xmax = 24.74 
             text = "AE1_at" 
-        intervals [180]:
+        intervals [179]:
             xmin = 24.74 
             xmax = 24.84 
             text = "" 
-        intervals [181]:
+        intervals [180]:
             xmin = 24.84 
             xmax = 24.870001 
             text = "AH0_the" 
-        intervals [182]:
+        intervals [181]:
             xmin = 24.870001 
             xmax = 24.969999 
             text = "" 
-        intervals [183]:
+        intervals [182]:
             xmin = 24.969999 
             xmax = 25.01 
             text = "R_train" 
-        intervals [184]:
+        intervals [183]:
             xmin = 25.01 
             xmax = 25.120001 
             text = "EY1_train" 
-        intervals [185]:
+        intervals [184]:
             xmin = 25.120001 
             xmax = 25.190001 
             text = "N_train" 
-        intervals [186]:
+        intervals [185]:
             xmin = 25.190001 
             xmax = 25.34 
             text = "" 
-        intervals [187]:
+        intervals [186]:
             xmin = 25.34 
             xmax = 25.450001 
             text = "EY1_station" 
-        intervals [188]:
+        intervals [187]:
             xmin = 25.450001 
             xmax = 25.559999 
             text = "" 
-        intervals [189]:
+        intervals [188]:
             xmin = 25.559999 
             xmax = 25.620001 
             text = "AH0_station" 
-        intervals [190]:
+        intervals [189]:
             xmin = 25.620001 
             xmax = 25.719999 
             text = "N_station" 
-        intervals [191]:
+        intervals [190]:
             xmin = 25.719999 
             xmax = 26.350438 
             text = "" 
