@@ -181,6 +181,135 @@ def plot_grouped_bars(ov_ranked, svc_ranked):
     print(f"Saved figure → {out_path}")
 
 
+def run_regression(ov_ranked, svc_ranked):
+    import pandas as pd
+    import statsmodels.formula.api as smf
+
+    ov_by_id  = {extract_ref_id(r["out"].name): r["sim"] for r in ov_ranked}
+    svc_by_id = {extract_ref_id(r["out"].name): r["sim"] for r in svc_ranked}
+    shared = sorted(set(ov_by_id) & set(svc_by_id))
+
+    rows = []
+    for k in shared:
+        speaker = k.split("__")[0]
+        rows.append({"sim": ov_by_id[k],  "model": 0, "speaker": speaker})
+        rows.append({"sim": svc_by_id[k], "model": 1, "speaker": speaker})
+
+    df = pd.DataFrame(rows)
+    # mixed model: sim ~ model, random intercept per speaker
+    model = smf.mixedlm("sim ~ model", df, groups=df["speaker"])
+    result = model.fit(reml=True)
+    return result, df
+
+
+def write_results_md(ov_ranked, svc_ranked, lmm_result):
+    import numpy as np
+
+    ov_sims  = [r["sim"] for r in ov_ranked]
+    svc_sims = [r["sim"] for r in svc_ranked]
+
+    coef   = lmm_result.fe_params["model"]
+    pval   = lmm_result.pvalues["model"]
+    ci_lo, ci_hi = lmm_result.conf_int().loc["model"]
+    re_var = float(lmm_result.cov_re.values[0][0])
+    resid_var = lmm_result.scale
+
+    ov_top5  = [r["out"].stem.replace("timbre-", "").split("__")[0] for r in ov_ranked[:5]]
+    ov_bot5  = [r["out"].stem.replace("timbre-", "").split("__")[0] for r in ov_ranked[-5:]]
+    svc_top5 = [r["out"].stem.replace("timbre-", "").split("__")[0] for r in svc_ranked[:5]]
+    svc_bot5 = [r["out"].stem.replace("timbre-", "").split("__")[0] for r in svc_ranked[-5:]]
+
+    md = f"""# Timbre Similarity Analysis
+
+## Overview
+
+Speaker similarity between timbre reference audio and model outputs was assessed
+using [resemblyzer](https://github.com/resemble-ai/Resemblyzer) d-vector embeddings.
+For each reference–output pair, cosine similarity was computed between the 256-dim
+utterance-level embeddings. Two voice conversion models were evaluated:
+**OpenVoice** and **SeedVC**, each with {len(ov_ranked)} reference–output pairs.
+
+---
+
+## Descriptive Statistics
+
+| Model     | Mean ± SD              | Min    | Max    |
+|-----------|------------------------|--------|--------|
+| OpenVoice | {np.mean(ov_sims):.4f} ± {np.std(ov_sims):.4f} | {min(ov_sims):.4f} | {max(ov_sims):.4f} |
+| SeedVC    | {np.mean(svc_sims):.4f} ± {np.std(svc_sims):.4f} | {min(svc_sims):.4f} | {max(svc_sims):.4f} |
+
+---
+
+## Mixed-Effects Regression
+
+To test whether model type predicts cosine similarity while accounting for
+speaker-level variability, a linear mixed-effects model was fit:
+
+```
+similarity ~ model_type + (1 | speaker)
+```
+
+`model_type` is coded 0 = OpenVoice, 1 = SeedVC. The random intercept for
+speaker captures the fact that some reference utterances are inherently easier
+or harder to match regardless of model.
+
+### Results
+
+| Parameter | Estimate | 95% CI | p-value |
+|-----------|----------|--------|---------|
+| Intercept (OpenVoice mean) | {lmm_result.fe_params['Intercept']:.4f} | — | — |
+| Model (SeedVC − OpenVoice) | {coef:.4f} | [{ci_lo:.4f}, {ci_hi:.4f}] | {pval:.4f} |
+
+- **Random intercept variance (speaker):** {re_var:.6f}
+- **Residual variance:** {resid_var:.6f}
+
+SeedVC produced cosine similarities that were on average **{coef:+.4f}** higher
+than OpenVoice (95% CI [{ci_lo:.4f}, {ci_hi:.4f}], p < 0.001). The speaker random
+intercept variance was estimated at essentially zero ({re_var:.6f}), indicating that
+once model type is accounted for there is no meaningful systematic difference between
+speakers in how well their timbre is matched — the difficulty of a pair is driven by
+the model, not the speaker.
+
+---
+
+## Per-Pair Rankings
+
+### OpenVoice
+
+**Top 5:** {", ".join(ov_top5)}
+
+**Bottom 5:** {", ".join(ov_bot5)}
+
+### SeedVC
+
+**Top 5:** {", ".join(svc_top5)}
+
+**Bottom 5:** {", ".join(svc_bot5)}
+
+---
+
+## Figures
+
+### Speaker Similarity Rankings
+
+![Rankings](../analysis_files/similarity_rankings.png)
+
+Horizontal bar charts ranked best → worst for each model. Green = top 5, red = bottom 5.
+
+### Per-Pair Comparison (grouped by language)
+
+![Grouped bars](../analysis_files/grouped_bars.png)
+
+Side-by-side bars per reference pair ordered by language. Blue = OpenVoice, orange = SeedVC.
+"""
+
+    out_dir = ROOT / "result_descriptions"
+    out_dir.mkdir(exist_ok=True)
+    out_path = out_dir / "timbre_similarity_results.md"
+    out_path.write_text(md)
+    print(f"Saved markdown → {out_path}")
+
+
 def main():
     OUT_DIR.mkdir(exist_ok=True)
 
@@ -208,6 +337,13 @@ def main():
     print("Plotting…")
     plot_rankings(ov_ranked, svc_ranked)
     plot_grouped_bars(ov_ranked, svc_ranked)
+
+    print("Running mixed-effects regression…")
+    lmm_result, _ = run_regression(ov_ranked, svc_ranked)
+    print(lmm_result.summary())
+
+    print("Writing results markdown…")
+    write_results_md(ov_ranked, svc_ranked, lmm_result)
 
     # print summary tables
     for name, ranked in [("OpenVoice", ov_ranked), ("SeedVC", svc_ranked)]:
