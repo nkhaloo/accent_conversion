@@ -110,7 +110,7 @@ def write_textgrid_excerpt(intervals, start, end, dst):
         f.write("\n".join(lines) + "\n")
 
 
-def process_output_file(model, speaker, tg_dir):
+def process_output_file(model, label, speaker, tg_dir):
     # Locate the TextGrid and WAV
     tg_files = [f for f in os.listdir(tg_dir)
                 if f.startswith(f"timbre-{speaker}__") and f.endswith(".TextGrid")]
@@ -131,10 +131,10 @@ def process_output_file(model, speaker, tg_dir):
     intervals = parse_intervals(tg_path)
 
     base = tg_file.replace(".TextGrid", "")
-    out_s1_wav = os.path.join(OUT_BASE, model, "sentence1", f"{base}_s1.wav")
-    out_s2_wav = os.path.join(OUT_BASE, model, "sentence2", f"{base}_s2.wav")
-    out_s1_tg  = os.path.join(OUT_BASE, model, "sentence1", f"{base}_s1.TextGrid")
-    out_s2_tg  = os.path.join(OUT_BASE, model, "sentence2", f"{base}_s2.TextGrid")
+    out_s1_wav = os.path.join(OUT_BASE, model, label, "sentence1", f"{base}_s1.wav")
+    out_s2_wav = os.path.join(OUT_BASE, model, label, "sentence2", f"{base}_s2.wav")
+    out_s1_tg  = os.path.join(OUT_BASE, model, label, "sentence1", f"{base}_s1.TextGrid")
+    out_s2_tg  = os.path.join(OUT_BASE, model, label, "sentence2", f"{base}_s2.TextGrid")
 
     ffmpeg_extract(wav_path, 0.0, s1_end, out_s1_wav)
     ffmpeg_extract(wav_path, s2_start, s2_end, out_s2_wav)
@@ -166,7 +166,7 @@ def process_source_file(source_id):
     print(f"  source/{source_id}: s1=0–{s1_end:.2f}s  s2={s2_start:.2f}–{s2_end:.2f}s")
 
 
-def process_reference_file(full_speaker_id):
+def process_reference_file(full_speaker_id, label):
     tg_path  = os.path.join(REF_TG_DIR, f"{full_speaker_id}.TextGrid")
     wav_path = os.path.join(REF_TG_DIR, f"{full_speaker_id}.wav")
 
@@ -180,10 +180,10 @@ def process_reference_file(full_speaker_id):
     s1_end, s2_start, s2_end = get_sentence_times(tg_path)
     intervals = parse_intervals(tg_path)
 
-    out_s1_wav = os.path.join(OUT_BASE, "reference", "sentence1", f"{full_speaker_id}_s1.wav")
-    out_s2_wav = os.path.join(OUT_BASE, "reference", "sentence2", f"{full_speaker_id}_s2.wav")
-    out_s1_tg  = os.path.join(OUT_BASE, "reference", "sentence1", f"{full_speaker_id}_s1.TextGrid")
-    out_s2_tg  = os.path.join(OUT_BASE, "reference", "sentence2", f"{full_speaker_id}_s2.TextGrid")
+    out_s1_wav = os.path.join(OUT_BASE, "reference", label, "sentence1", f"{full_speaker_id}_s1.wav")
+    out_s2_wav = os.path.join(OUT_BASE, "reference", label, "sentence2", f"{full_speaker_id}_s2.wav")
+    out_s1_tg  = os.path.join(OUT_BASE, "reference", label, "sentence1", f"{full_speaker_id}_s1.TextGrid")
+    out_s2_tg  = os.path.join(OUT_BASE, "reference", label, "sentence2", f"{full_speaker_id}_s2.TextGrid")
 
     ffmpeg_extract(wav_path, 0.0, s1_end, out_s1_wav)
     ffmpeg_extract(wav_path, s2_start, s2_end, out_s2_wav)
@@ -194,7 +194,7 @@ def process_reference_file(full_speaker_id):
 
 def main():
     sources_needed = set()
-    refs_needed = set()
+    refs_needed = {}  # full_speaker_id → label
 
     for model, groups in MODELS.items():
         tg_dir = OUTPUT_TG_DIR[model]
@@ -202,25 +202,24 @@ def main():
         for label, speakers in groups.items():
             print(f"  -- {label} --")
             for speaker in speakers:
-                process_output_file(model, speaker, tg_dir)
+                process_output_file(model, label, speaker, tg_dir)
                 tg_files = [f for f in os.listdir(tg_dir)
                             if f.startswith(f"timbre-{speaker}__") and f.endswith(".TextGrid")]
                 if tg_files:
                     m = re.search(r"__source-(english\d+__\d+)__", tg_files[0])
                     if m:
                         sources_needed.add(m.group(1))
-                    # Full speaker ID (e.g. "gujarati11__2301") from the filename
                     m2 = re.match(r"timbre-(\w+__\d+)__", tg_files[0])
                     if m2:
-                        refs_needed.add(m2.group(1))
+                        refs_needed[m2.group(1)] = label
 
     print("\n=== source ===")
     for src_id in sorted(sources_needed):
         process_source_file(src_id)
 
     print("\n=== reference ===")
-    for ref_id in sorted(refs_needed):
-        process_reference_file(ref_id)
+    for ref_id, label in sorted(refs_needed.items()):
+        process_reference_file(ref_id, label)
 
     print("\nDone.")
 
