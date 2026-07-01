@@ -1,1 +1,17 @@
 .DS_Store
+.Rhistory
+__pycache__/
+*.pyc
+
+# Reproducible pipeline intermediates -- regenerate from reference/ and
+# source/ via src/preprocess_audio.py -> src/run_mfa.py ->
+# src/textgrid_cleaning.py -> src/run_zstts.py. Not the deliverable;
+# analysis_files/ and experiment/ are.
+reference_wav/
+reference_textgrids/
+reference_textgrids_cleaned/
+source_wav/
+source_textgrids/
+source_textgrids_cleaned/
+output/
+processed/
