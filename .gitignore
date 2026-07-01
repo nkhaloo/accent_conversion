@@ -6,12 +6,13 @@ __pycache__/
 # Reproducible pipeline intermediates -- regenerate from reference/ and
 # source/ via src/preprocess_audio.py -> src/run_mfa.py ->
 # src/textgrid_cleaning.py -> src/run_zstts.py. Not the deliverable;
-# analysis_files/ and experiment/ are.
-reference_wav/
+# analysis_files/ and experiment/ are. reference_wav/, source_wav/, and
+# output/*/textgrids_cleaned/ (model output wavs + their TextGrids) stay
+# tracked since they're actively used.
 reference_textgrids/
 reference_textgrids_cleaned/
-source_wav/
 source_textgrids/
 source_textgrids_cleaned/
-output/
+output/*/textgrids/
+output/_tmp_seedvc/
 processed/

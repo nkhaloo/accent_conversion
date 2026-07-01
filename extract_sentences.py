@@ -1,12 +1,26 @@
 """
 Extract sentence 1 ("Please call Stella.") and sentence 2
 ("Ask her to bring these things with her from the store")
-for top-5 and bottom-5 model outputs plus their source audio.
+for every top5/bottom5 listening-test item: the converted output,
+its timbre reference, and its source content audio.
 
 Boundaries come from each file's own TextGrid:
   interval[11] = silence after "Stella"  → s1 ends at its xmax
   interval[12] = start of "Ask"          → s2 starts at its xmin
   interval[39] = silence after "store"   → s2 ends at its xmax
+
+top5/bottom5 membership is read directly from analysis_files/{model}/{top5,bottom5}/,
+which src/timbre_similarity.py populates -- there is no separate hardcoded list here,
+so this can never drift out of sync with the actual rankings.
+
+Output layout (identical for every audio kind):
+  analysis_files/sentence_extracts/{model}/{label}/{kind}/sentence{1,2}/{basename}_s{1,2}.wav
+  analysis_files/sentence_extracts/{model}/{label}/{kind}/sentence{1,2}/{basename}_s{1,2}.TextGrid
+
+where model in {openvoice, seed_vc}, label in {top5, bottom5},
+kind in {output, reference, source}. Reference/source clips are copied once per
+(model, label) pair that needs them, so a speaker appearing in different labels
+across models (e.g. top5 for one model, bottom5 for the other) gets both copies.
 """
 
 import os
@@ -15,16 +29,10 @@ import subprocess
 
 BASE = "/Users/noahkhaloo/Downloads/projects/accent_conversion"
 
-MODELS = {
-    "openvoice": {
-        "top5":    ["hindi19", "gujarati17", "gujarati11", "hindi13", "gujarati13"],
-        "bottom5": ["gujarati9", "gujarati8", "hindi7", "hindi12", "gujarati7"],
-    },
-    "seed_vc": {
-        "top5":    ["gujarati5", "gujarati16", "hindi19", "hindi2", "hindi10"],
-        "bottom5": ["hindi21", "hindi16", "hindi26", "hindi13", "gujarati4"],
-    },
-}
+MODELS = ["openvoice", "seed_vc"]
+LABELS = ["top5", "bottom5"]
+
+RANKED_DIR = os.path.join(BASE, "analysis_files")
 
 OUTPUT_TG_DIR = {
     "openvoice": os.path.join(BASE, "output", "openvoice", "textgrids_cleaned"),
@@ -37,6 +45,9 @@ SOURCE_TG_DIR = os.path.join(BASE, "source_textgrids_cleaned")
 REF_TG_DIR = os.path.join(BASE, "reference_textgrids_cleaned")
 
 OUT_BASE = os.path.join(BASE, "analysis_files", "sentence_extracts")
+
+TIMBRE_RE = re.compile(r"^timbre-(.+?)__source-")
+SOURCE_ID_RE = re.compile(r"__source-(english\d+__\d+)__")
 
 
 def parse_intervals(tg_path):
@@ -110,116 +121,102 @@ def write_textgrid_excerpt(intervals, start, end, dst):
         f.write("\n".join(lines) + "\n")
 
 
-def process_output_file(model, label, speaker, tg_dir):
-    # Locate the TextGrid and WAV
-    tg_files = [f for f in os.listdir(tg_dir)
-                if f.startswith(f"timbre-{speaker}__") and f.endswith(".TextGrid")]
-    if not tg_files:
-        print(f"  WARNING: no TextGrid found for {model}/{speaker}")
-        return
-    tg_file = tg_files[0]
-    wav_file = tg_file.replace(".TextGrid", ".wav")
-
-    tg_path  = os.path.join(tg_dir, tg_file)
-    wav_path = os.path.join(tg_dir, wav_file)
-
-    if not os.path.exists(wav_path):
-        print(f"  WARNING: WAV not found: {wav_path}")
-        return
-
-    s1_end, s2_start, s2_end = get_sentence_times(tg_path)
-    intervals = parse_intervals(tg_path)
-
-    base = tg_file.replace(".TextGrid", "")
-    out_s1_wav = os.path.join(OUT_BASE, model, label, "sentence1", f"{base}_s1.wav")
-    out_s2_wav = os.path.join(OUT_BASE, model, label, "sentence2", f"{base}_s2.wav")
-    out_s1_tg  = os.path.join(OUT_BASE, model, label, "sentence1", f"{base}_s1.TextGrid")
-    out_s2_tg  = os.path.join(OUT_BASE, model, label, "sentence2", f"{base}_s2.TextGrid")
-
-    ffmpeg_extract(wav_path, 0.0, s1_end, out_s1_wav)
-    ffmpeg_extract(wav_path, s2_start, s2_end, out_s2_wav)
-    write_textgrid_excerpt(intervals, 0.0,      s1_end, out_s1_tg)
-    write_textgrid_excerpt(intervals, s2_start, s2_end, out_s2_tg)
-    print(f"  {speaker}: s1=0–{s1_end:.2f}s  s2={s2_start:.2f}–{s2_end:.2f}s")
-
-
-def process_source_file(source_id):
-    tg_path  = os.path.join(SOURCE_TG_DIR, f"{source_id}.TextGrid")
-    mp3_path = os.path.join(SOURCE_DIR, f"{source_id}.mp3")
-
-    if not os.path.exists(mp3_path):
-        print(f"  WARNING: source MP3 not found: {mp3_path}")
-        return
-
-    s1_end, s2_start, s2_end = get_sentence_times(tg_path)
-    intervals = parse_intervals(tg_path)
-
-    out_s1_wav = os.path.join(OUT_BASE, "source", "sentence1", f"{source_id}_s1.wav")
-    out_s2_wav = os.path.join(OUT_BASE, "source", "sentence2", f"{source_id}_s2.wav")
-    out_s1_tg  = os.path.join(OUT_BASE, "source", "sentence1", f"{source_id}_s1.TextGrid")
-    out_s2_tg  = os.path.join(OUT_BASE, "source", "sentence2", f"{source_id}_s2.TextGrid")
-
-    ffmpeg_extract(mp3_path, 0.0, s1_end, out_s1_wav)
-    ffmpeg_extract(mp3_path, s2_start, s2_end, out_s2_wav)
-    write_textgrid_excerpt(intervals, 0.0,      s1_end, out_s1_tg)
-    write_textgrid_excerpt(intervals, s2_start, s2_end, out_s2_tg)
-    print(f"  source/{source_id}: s1=0–{s1_end:.2f}s  s2={s2_start:.2f}–{s2_end:.2f}s")
-
-
-def process_reference_file(full_speaker_id, label):
-    tg_path  = os.path.join(REF_TG_DIR, f"{full_speaker_id}.TextGrid")
-    wav_path = os.path.join(REF_TG_DIR, f"{full_speaker_id}.wav")
-
+def extract_sentence_pair(tg_path, wav_path, out_dir, basename):
+    """Shared extraction logic for every audio kind (output/reference/source):
+    locate the two sentences in tg_path/wav_path and write trimmed wav+TextGrid
+    pairs into out_dir/sentence{1,2}/."""
     if not os.path.exists(tg_path):
-        print(f"  WARNING: reference TextGrid not found: {tg_path}")
-        return
+        print(f"  WARNING: TextGrid not found: {tg_path}")
+        return False
     if not os.path.exists(wav_path):
-        print(f"  WARNING: reference WAV not found: {wav_path}")
-        return
+        print(f"  WARNING: audio not found: {wav_path}")
+        return False
 
     s1_end, s2_start, s2_end = get_sentence_times(tg_path)
     intervals = parse_intervals(tg_path)
 
-    out_s1_wav = os.path.join(OUT_BASE, "reference", label, "sentence1", f"{full_speaker_id}_s1.wav")
-    out_s2_wav = os.path.join(OUT_BASE, "reference", label, "sentence2", f"{full_speaker_id}_s2.wav")
-    out_s1_tg  = os.path.join(OUT_BASE, "reference", label, "sentence1", f"{full_speaker_id}_s1.TextGrid")
-    out_s2_tg  = os.path.join(OUT_BASE, "reference", label, "sentence2", f"{full_speaker_id}_s2.TextGrid")
+    out_s1_wav = os.path.join(out_dir, "sentence1", f"{basename}_s1.wav")
+    out_s2_wav = os.path.join(out_dir, "sentence2", f"{basename}_s2.wav")
+    out_s1_tg  = os.path.join(out_dir, "sentence1", f"{basename}_s1.TextGrid")
+    out_s2_tg  = os.path.join(out_dir, "sentence2", f"{basename}_s2.TextGrid")
 
     ffmpeg_extract(wav_path, 0.0, s1_end, out_s1_wav)
     ffmpeg_extract(wav_path, s2_start, s2_end, out_s2_wav)
     write_textgrid_excerpt(intervals, 0.0,      s1_end, out_s1_tg)
     write_textgrid_excerpt(intervals, s2_start, s2_end, out_s2_tg)
-    print(f"  {full_speaker_id}: s1=0–{s1_end:.2f}s  s2={s2_start:.2f}–{s2_end:.2f}s")
+    print(f"    {basename}: s1=0–{s1_end:.2f}s  s2={s2_start:.2f}–{s2_end:.2f}s")
+    return True
+
+
+def discover_labels(model):
+    """Read analysis_files/{model}/{top5,bottom5}/ (written by timbre_similarity.py)
+    to find which reference ids belong to each label -- this is the single source
+    of truth for top5/bottom5 membership, so it can't drift from the actual rankings."""
+    labels = {}
+    for label in LABELS:
+        label_dir = os.path.join(RANKED_DIR, model, label)
+        ref_ids = []
+        if os.path.isdir(label_dir):
+            for fname in sorted(os.listdir(label_dir)):
+                m = TIMBRE_RE.match(fname)
+                if m:
+                    ref_ids.append(m.group(1))
+        else:
+            print(f"  WARNING: {label_dir} not found")
+        labels[label] = ref_ids
+    return labels
+
+
+def find_output_tg(tg_dir, ref_id):
+    matches = [f for f in os.listdir(tg_dir)
+               if f.startswith(f"timbre-{ref_id}__source-") and f.endswith(".TextGrid")]
+    return matches[0] if matches else None
 
 
 def main():
-    sources_needed = set()
-    refs_needed = {}  # full_speaker_id → label
-
-    for model, groups in MODELS.items():
+    for model in MODELS:
         tg_dir = OUTPUT_TG_DIR[model]
+        labels = discover_labels(model)
         print(f"\n=== {model} ===")
-        for label, speakers in groups.items():
-            print(f"  -- {label} --")
-            for speaker in speakers:
-                process_output_file(model, label, speaker, tg_dir)
-                tg_files = [f for f in os.listdir(tg_dir)
-                            if f.startswith(f"timbre-{speaker}__") and f.endswith(".TextGrid")]
-                if tg_files:
-                    m = re.search(r"__source-(english\d+__\d+)__", tg_files[0])
-                    if m:
-                        sources_needed.add(m.group(1))
-                    m2 = re.match(r"timbre-(\w+__\d+)__", tg_files[0])
-                    if m2:
-                        refs_needed[m2.group(1)] = label
 
-    print("\n=== source ===")
-    for src_id in sorted(sources_needed):
-        process_source_file(src_id)
+        for label, ref_ids in labels.items():
+            print(f"  -- {label} ({len(ref_ids)} speakers) --")
 
-    print("\n=== reference ===")
-    for ref_id, label in sorted(refs_needed.items()):
-        process_reference_file(ref_id, label)
+            for ref_id in ref_ids:
+                tg_file = find_output_tg(tg_dir, ref_id)
+                if not tg_file:
+                    print(f"  WARNING: no output TextGrid found for {model}/{label}/{ref_id}")
+                    continue
+
+                basename = tg_file.replace(".TextGrid", "")
+                wav_file = tg_file.replace(".TextGrid", ".wav")
+
+                extract_sentence_pair(
+                    os.path.join(tg_dir, tg_file),
+                    os.path.join(tg_dir, wav_file),
+                    os.path.join(OUT_BASE, model, label, "output"),
+                    basename,
+                )
+
+                extract_sentence_pair(
+                    os.path.join(REF_TG_DIR, f"{ref_id}.TextGrid"),
+                    os.path.join(REF_TG_DIR, f"{ref_id}.wav"),
+                    os.path.join(OUT_BASE, model, label, "reference"),
+                    ref_id,
+                )
+
+                m = SOURCE_ID_RE.search(tg_file)
+                if not m:
+                    print(f"  WARNING: could not parse source id from {tg_file}")
+                    continue
+                source_id = m.group(1)
+
+                extract_sentence_pair(
+                    os.path.join(SOURCE_TG_DIR, f"{source_id}.TextGrid"),
+                    os.path.join(SOURCE_DIR, f"{source_id}.mp3"),
+                    os.path.join(OUT_BASE, model, label, "source"),
+                    source_id,
+                )
 
     print("\nDone.")
 
