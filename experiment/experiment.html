@@ -254,6 +254,8 @@ const PRACTICE_TRIALS = shuffle(
 let trialIndex = 0;
 let practiceIndex = 0;
 let participantId = "";
+/* Unique per-session ID, generated regardless of the Prolific ID entered. */
+const SESSION_ID = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
 const results = [];
 const screen = document.getElementById("screen");
 
@@ -280,19 +282,32 @@ function saveTrial(row) {
 function showWelcome() {
   screen.innerHTML = `
     <h1>${CONFIG.pageTitle}</h1>
-    <div class="notice">You will be hearing speakers who are capable of speaking in different accents.</div>
     <p class="lead">On each trial you will hear <strong>two short audio clips</strong>, one after the other. Each clip plays <strong>only once</strong>, so please listen carefully.</p>
     <p class="lead">After both clips finish, you will answer:<br><em>&ldquo;${CONFIG.question}&rdquo;</em></p>
     <p class="sub">There are ${TRIALS.length} trials. The experiment takes about 25 minutes. Please use headphones in a quiet environment.</p>
-    <p class="sub" style="margin-top:20px;">Participant ID (optional):</p>
-    <input type="text" id="pid" placeholder="e.g. P01" autocomplete="off">
-    <br>
+    <p class="sub" style="margin-top:20px;">Prolific ID:</p>
+    <input type="text" id="pid" placeholder="Enter your Prolific ID" autocomplete="off">
+    <div class="check-feedback" id="pidError" style="color: var(--red); margin-top: 0; margin-bottom: 14px;"></div>
     <button class="btn-primary" id="startBtn">Begin Experiment</button>
   `;
   document.getElementById("startBtn").addEventListener("click", () => {
-    participantId = document.getElementById("pid").value.trim() || "anonymous";
-    showAudioCheck();
+    const pid = document.getElementById("pid").value.trim();
+    if (!pid) {
+      document.getElementById("pidError").textContent = "Please enter your Prolific ID.";
+      return;
+    }
+    participantId = pid;
+    showNotice();
   });
+}
+
+function showNotice() {
+  screen.innerHTML = `
+    <h1>Before you begin</h1>
+    <div class="notice">In this experiment, you may be hearing speakers who are capable of speaking in different accents. If applicable, try to distinguish between accent/dialect from the sound of one's voice.</div>
+    <button class="btn-primary" id="noticeBtn">Continue</button>
+  `;
+  document.getElementById("noticeBtn").addEventListener("click", showAudioCheck);
 }
 
 /* ============================================================
@@ -390,6 +405,7 @@ function showTrial() {
     const row = {
       experiment: CONFIG.experimentName,
       participant: participantId,
+      session_id: SESSION_ID,
       model: t.model,
       trial: trialIndex + 1,
       condition_id: t.cond.id,

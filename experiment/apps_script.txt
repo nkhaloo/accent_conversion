@@ -17,6 +17,7 @@ var HEADERS = [
   'timestamp',
   'experiment',
   'participant',
+  'session_id',
   'model',
   'trial',
   'condition_id',
