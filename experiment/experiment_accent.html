@@ -118,6 +118,15 @@
 
   .question { font-size: 1.25rem; font-weight: 600; margin: 8px 0 24px; line-height: 1.5; }
   .answers { display: flex; gap: 18px; justify-content: center; }
+  .options { display: grid; grid-template-columns: repeat(2, minmax(120px, 180px)); gap: 14px; justify-content: center; margin-top: 8px; }
+  .btn-option {
+    background: var(--card);
+    color: var(--ink);
+    border: 2px solid var(--border);
+    font-weight: 600;
+  }
+  .btn-option:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .check-feedback { min-height: 1.5em; font-size: 0.95rem; margin-top: 16px; font-weight: 600; }
   .fade { transition: opacity 0.25s ease; }
   .hidden-soft { opacity: 0; pointer-events: none; }
   .status-line { min-height: 1.4em; font-size: 0.9rem; color: var(--muted); margin-bottom: 8px; }
@@ -275,7 +284,59 @@ function showWelcome() {
   `;
   document.getElementById("startBtn").addEventListener("click", () => {
     participantId = document.getElementById("pid").value.trim() || "anonymous";
-    showTrial();
+    showAudioCheck();
+  });
+}
+
+/* ============================================================
+   AUDIO CHECK — replayable clip for setting a comfortable volume,
+   gated on a comprehension question ("bananas" -> yellow).
+   ============================================================ */
+const AUDIO_CHECK = {
+  file: "audio_check/audio_check.wav",
+  question: "What is the color of Tom's favorite fruit?",
+  options: ["white", "black", "orange", "yellow"],
+  correct: "yellow"
+};
+
+function showAudioCheck() {
+  screen.innerHTML = `
+    <h1>Audio Check</h1>
+    <p class="lead">Listen carefully to this audio and <strong>adjust your volume to a comfortable level</strong>. Leave it there for the whole experiment.</p>
+    <p class="sub">You can play the clip as many times as you like.</p>
+    <button class="btn-primary" id="checkPlayBtn" style="margin: 18px 0 26px;">&#9654;&nbsp; Play Audio</button>
+    <div class="question">${AUDIO_CHECK.question}</div>
+    <div class="options">
+      ${AUDIO_CHECK.options.map(o => `<button class="btn-option" data-answer="${o}">${o}</button>`).join("")}
+    </div>
+    <div class="check-feedback" id="checkFeedback"></div>
+  `;
+
+  const playBtn = document.getElementById("checkPlayBtn");
+  const feedback = document.getElementById("checkFeedback");
+  const checkAudio = new Audio(AUDIO_CHECK.file);
+  checkAudio.preload = "auto";
+
+  playBtn.addEventListener("click", () => {
+    checkAudio.currentTime = 0;
+    checkAudio.play().catch(() => {
+      feedback.style.color = "var(--red)";
+      feedback.textContent = "Could not play the audio check clip.";
+    });
+    playBtn.innerHTML = "&#9654;&nbsp; Play Again";
+  });
+
+  screen.querySelectorAll(".btn-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const answer = btn.dataset.answer;
+      if (answer === AUDIO_CHECK.correct) {
+        checkAudio.pause();
+        showTrial();
+      } else {
+        feedback.style.color = "var(--red)";
+        feedback.textContent = "Not quite — listen to the clip again and try again.";
+      }
+    });
   });
 }
 
