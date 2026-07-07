@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accent Perception Experiment</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1c2333;
+    --muted: #6b7280;
+    --accent: #4f6df5;
+    --accent-dark: #3b56d4;
+    --green: #2e9e6b;
+    --red: #d95757;
+    --border: #e3e6ec;
+    --shadow: 0 8px 30px rgba(28, 35, 51, 0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    max-width: 680px;
+    width: 100%;
+    padding: 48px;
+    text-align: center;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 18px; letter-spacing: -0.02em; }
+  p.lead { font-size: 1.08rem; line-height: 1.65; color: var(--ink); margin-bottom: 14px; }
+  p.sub { font-size: 0.95rem; line-height: 1.6; color: var(--muted); margin-bottom: 10px; }
+  .notice {
+    background: #eef1ff;
+    border: 1px solid #d5dcff;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin: 22px 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #33406e;
+  }
+  input[type="text"] {
+    width: 100%;
+    max-width: 320px;
+    padding: 11px 14px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 6px 0 22px;
+    outline: none;
+    text-align: center;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  button {
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 34px;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+  .btn-yes { background: var(--green); color: #fff; min-width: 150px; }
+  .btn-no  { background: var(--red);   color: #fff; min-width: 150px; }
+  .btn-yes:hover:not(:disabled), .btn-no:hover:not(:disabled) { filter: brightness(1.07); }
+
+  /* progress */
+  .progress-wrap { margin-bottom: 30px; }
+  .progress-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
+  .progress-track {
+    height: 8px; background: var(--border); border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%; background: var(--accent);
+    border-radius: 99px; transition: width 0.35s ease;
+  }
+
+  /* clips */
+  .clips { display: flex; gap: 20px; justify-content: center; margin: 30px 0; }
+  .clip {
+    flex: 1; max-width: 240px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 16px;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  .clip .icon { font-size: 2rem; margin-bottom: 10px; }
+  .clip .name { font-weight: 600; font-size: 1rem; }
+  .clip .state { font-size: 0.82rem; color: var(--muted); margin-top: 6px; min-height: 1.1em; }
+  .clip.playing {
+    border-color: var(--accent);
+    background: #eef1ff;
+    box-shadow: 0 0 0 4px rgba(79, 109, 245, 0.14);
+  }
+  .clip.done { border-color: #c9d8cf; background: #f2f8f4; }
+  .clip.playing .state { color: var(--accent); font-weight: 600; }
+  .clip.done .state { color: var(--green); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+  .clip.playing .icon { animation: pulse 1.1s ease-in-out infinite; }
+
+  .question { font-size: 1.25rem; font-weight: 600; margin: 8px 0 24px; line-height: 1.5; }
+  .answers { display: flex; gap: 18px; justify-content: center; }
+  .fade { transition: opacity 0.25s ease; }
+  .hidden-soft { opacity: 0; pointer-events: none; }
+  .status-line { min-height: 1.4em; font-size: 0.9rem; color: var(--muted); margin-bottom: 8px; }
+  .footer-note { margin-top: 26px; font-size: 0.8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="card" id="screen"></div>
+
+<script>
+/* ============================================================
+   CONFIG — the accent version of this experiment differs only
+   in these values.
+   ============================================================ */
+const CONFIG = {
+  experimentName: "accent_dialect",
+  pageTitle: "Accent Perception Experiment",
+  question: "Do the speakers in these clips have the same accent/dialect of English?",
+  yesLabel: "Yes, same accent",
+  noLabel: "No, different accents"
+};
+
+const AUDIO_BASE = "../analysis_files/sentence_extracts/all_files";
+
+/* ============================================================
+   STIMULI
+   Each item = one model output: a timbre reference (speaker
+   identity) + a style/source reference (accent) fed to the model.
+   refPrefix = where that timbre speaker's reference wavs actually
+   live on disk (a few are deduplicated across model folders).
+   Style/source reference wavs are all deduplicated into
+   openvoice_bottom5_source_*.
+   ============================================================ */
+const ITEMS = {
+  openvoice: [
+    { group: "bottom5", timbre: "gujarati7__1504",  source: "english200__667",  refPrefix: "openvoice_bottom5" },
+    { group: "bottom5", timbre: "gujarati8__1678",  source: "english200__667",  refPrefix: "openvoice_bottom5" },
+    { group: "bottom5", timbre: "gujarati9__2041",  source: "english584__2197", refPrefix: "openvoice_bottom5" },
+    { group: "bottom5", timbre: "hindi12__1440",    source: "english200__667",  refPrefix: "openvoice_bottom5" },
+    { group: "bottom5", timbre: "hindi7__867",      source: "english200__667",  refPrefix: "openvoice_bottom5" },
+    { group: "top5",    timbre: "gujarati11__2301", source: "english584__2197", refPrefix: "openvoice_top5" },
+    { group: "top5",    timbre: "gujarati13__2409", source: "english200__667",  refPrefix: "openvoice_top5" },
+    { group: "top5",    timbre: "gujarati17__2824", source: "english200__667",  refPrefix: "openvoice_top5" },
+    { group: "top5",    timbre: "hindi13__1633",    source: "english200__667",  refPrefix: "openvoice_top5" },
+    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197", refPrefix: "openvoice_top5" }
+  ],
+  seed_vc: [
+    { group: "bottom5", timbre: "gujarati4__610",   source: "english200__667",  refPrefix: "seed_vc_bottom5" },
+    { group: "bottom5", timbre: "hindi13__1633",    source: "english200__667",  refPrefix: "openvoice_top5" },
+    { group: "bottom5", timbre: "hindi16__1966",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
+    { group: "bottom5", timbre: "hindi21__2236",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
+    { group: "bottom5", timbre: "hindi26__2354",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
+    { group: "top5",    timbre: "gujarati16__2558", source: "english200__667",  refPrefix: "seed_vc_top5" },
+    { group: "top5",    timbre: "gujarati5__1016",  source: "english200__667",  refPrefix: "seed_vc_top5" },
+    { group: "top5",    timbre: "hindi10__1202",    source: "english200__667",  refPrefix: "seed_vc_top5" },
+    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197", refPrefix: "openvoice_top5" },
+    { group: "top5",    timbre: "hindi2__587",      source: "english584__2197", refPrefix: "seed_vc_top5" }
+  ]
+};
+
+/* File-path builders. n = sentence number (1 or 2). */
+function outputFile(model, item, n) {
+  return `${AUDIO_BASE}/${model}_${item.group}_output_sentence${n}_timbre-${item.timbre}__source-${item.source}__${model}_s${n}.wav`;
+}
+function timbreRefFile(item, n) {
+  return `${AUDIO_BASE}/${item.refPrefix}_reference_sentence${n}_${item.timbre}_s${n}.wav`;
+}
+function sourceRefFile(item, n) {
+  return `${AUDIO_BASE}/openvoice_bottom5_source_sentence${n}_${item.source}_s${n}.wav`;
+}
+
+/* Conditions: [what plays first (sentence 1), what plays second (sentence 2)].
+   sameSpeakerTruth = ground truth where it is defined independently of the
+   model (NA when a model output is involved). */
+const CONDITIONS = [
+  { id: 1, name: "output_vs_timbreRef",    first: "output",    second: "timbreRef", sameSpeakerTruth: "NA" },
+  { id: 2, name: "timbreRef_vs_timbreRef", first: "timbreRef", second: "timbreRef", sameSpeakerTruth: "same" },
+  { id: 3, name: "timbreRef_vs_sourceRef", first: "timbreRef", second: "sourceRef", sameSpeakerTruth: "different" },
+  { id: 4, name: "output_vs_sourceRef",    first: "output",    second: "sourceRef", sameSpeakerTruth: "NA" },
+  { id: 5, name: "sourceRef_vs_sourceRef", first: "sourceRef", second: "sourceRef", sameSpeakerTruth: "same" }
+];
+
+function fileFor(role, model, item, n) {
+  if (role === "output")    return outputFile(model, item, n);
+  if (role === "timbreRef") return timbreRefFile(item, n);
+  return sourceRefFile(item, n);
+}
+
+/* ============================================================
+   EXPERIMENT STATE
+   ============================================================ */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const MODEL = Math.random() < 0.5 ? "openvoice" : "seed_vc";
+
+const TRIALS = shuffle(
+  ITEMS[MODEL].flatMap(item =>
+    CONDITIONS.map(cond => ({
+      model: MODEL,
+      item,
+      cond,
+      audio1: fileFor(cond.first, MODEL, item, 1),
+      audio2: fileFor(cond.second, MODEL, item, 2)
+    }))
+  )
+);
+
+let trialIndex = 0;
+let participantId = "";
+const results = [];
+const screen = document.getElementById("screen");
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+function showWelcome() {
+  screen.innerHTML = `
+    <h1>${CONFIG.pageTitle}</h1>
+    <div class="notice">You will be hearing speakers who are capable of speaking in different accents.</div>
+    <p class="lead">On each trial you will hear <strong>two short audio clips</strong>, one after the other. Each clip plays <strong>only once</strong>, so please listen carefully.</p>
+    <p class="lead">After both clips finish, you will answer:<br><em>&ldquo;${CONFIG.question}&rdquo;</em></p>
+    <p class="sub">There are ${TRIALS.length} trials. The experiment takes about 15 minutes. Please use headphones in a quiet environment.</p>
+    <p class="sub" style="margin-top:20px;">Participant ID (optional):</p>
+    <input type="text" id="pid" placeholder="e.g. P01" autocomplete="off">
+    <br>
+    <button class="btn-primary" id="startBtn">Begin Experiment</button>
+  `;
+  document.getElementById("startBtn").addEventListener("click", () => {
+    participantId = document.getElementById("pid").value.trim() || "anonymous";
+    showTrial();
+  });
+}
+
+function showTrial() {
+  const t = TRIALS[trialIndex];
+  const pct = (trialIndex / TRIALS.length) * 100;
+
+  screen.innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-label">Trial ${trialIndex + 1} of ${TRIALS.length}</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="status-line" id="statusLine">Press play when you are ready. The clips play only once.</div>
+    <div class="clips">
+      <div class="clip" id="clip1">
+        <div class="icon">&#127911;</div>
+        <div class="name">Clip 1</div>
+        <div class="state" id="state1">waiting</div>
+      </div>
+      <div class="clip" id="clip2">
+        <div class="icon">&#127911;</div>
+        <div class="name">Clip 2</div>
+        <div class="state" id="state2">waiting</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="playBtn">&#9654;&nbsp; Play Clips</button>
+    <div id="qa" class="fade hidden-soft" style="margin-top:34px;">
+      <div class="question">${CONFIG.question}</div>
+      <div class="answers">
+        <button class="btn-yes" id="yesBtn" disabled>${CONFIG.yesLabel}</button>
+        <button class="btn-no" id="noBtn" disabled>${CONFIG.noLabel}</button>
+      </div>
+    </div>
+  `;
+
+  const playBtn = document.getElementById("playBtn");
+  const clip1El = document.getElementById("clip1");
+  const clip2El = document.getElementById("clip2");
+  const state1 = document.getElementById("state1");
+  const state2 = document.getElementById("state2");
+  const statusLine = document.getElementById("statusLine");
+  const qa = document.getElementById("qa");
+  const yesBtn = document.getElementById("yesBtn");
+  const noBtn = document.getElementById("noBtn");
+
+  const a1 = new Audio(t.audio1);
+  const a2 = new Audio(t.audio2);
+  a1.preload = "auto";
+  a2.preload = "auto";
+  let questionShownAt = null;
+
+  function reportAudioProblem(src) {
+    statusLine.textContent =
+      `Could not play "${src.split("/").pop()}". Check that the ` +
+      `analysis_files/sentence_extracts/all_files folder is present next to ` +
+      `the experiment folder.`;
+    statusLine.style.color = "var(--red)";
+  }
+
+  function showQuestion() {
+    qa.classList.remove("hidden-soft");
+    yesBtn.disabled = false;
+    noBtn.disabled = false;
+    questionShownAt = performance.now();
+  }
+
+  function playSecond() {
+    clip2El.classList.add("playing");
+    state2.textContent = "playing…";
+    a2.onended = () => {
+      clip2El.classList.remove("playing");
+      clip2El.classList.add("done");
+      state2.textContent = "played";
+      statusLine.textContent = "";
+      showQuestion();
+    };
+    a2.onerror = () => {
+      clip2El.classList.add("done");
+      state2.textContent = "audio error";
+      reportAudioProblem(t.audio2);
+      showQuestion();
+    };
+    a2.play().catch(() => {
+      state2.textContent = "audio error";
+      reportAudioProblem(t.audio2);
+      showQuestion();
+    });
+  }
+
+  playBtn.addEventListener("click", () => {
+    playBtn.disabled = true;
+    playBtn.style.visibility = "hidden";
+    statusLine.textContent = "Listen carefully — the clips play only once.";
+    /* Unlock clip 2 inside this user gesture so strict autoplay policies
+       (Safari) allow it to start later from the "ended" event. */
+    a2.muted = true;
+    const unlock = a2.play();
+    if (unlock && unlock.then) {
+      unlock.then(() => { a2.pause(); a2.currentTime = 0; a2.muted = false; })
+            .catch(() => { a2.muted = false; });
+    } else {
+      a2.muted = false;
+    }
+    clip1El.classList.add("playing");
+    state1.textContent = "playing…";
+    a1.onended = () => {
+      clip1El.classList.remove("playing");
+      clip1El.classList.add("done");
+      state1.textContent = "played";
+      setTimeout(playSecond, 600);
+    };
+    a1.onerror = () => {
+      clip1El.classList.add("done");
+      state1.textContent = "audio error";
+      reportAudioProblem(t.audio1);
+      setTimeout(playSecond, 600);
+    };
+    a1.play().catch(() => {
+      state1.textContent = "audio error";
+      reportAudioProblem(t.audio1);
+      setTimeout(playSecond, 600);
+    });
+  });
+
+  function respond(answer) {
+    yesBtn.disabled = true;
+    noBtn.disabled = true;
+    results.push({
+      experiment: CONFIG.experimentName,
+      participant: participantId,
+      model: t.model,
+      trial: trialIndex + 1,
+      condition_id: t.cond.id,
+      condition: t.cond.name,
+      group: t.item.group,
+      timbre: t.item.timbre,
+      source: t.item.source,
+      audio1: t.audio1.split("/").pop(),
+      audio2: t.audio2.split("/").pop(),
+      response: answer,
+      same_speaker_truth: t.cond.sameSpeakerTruth,
+      rt_ms: Math.round(performance.now() - questionShownAt),
+      timestamp: new Date().toISOString()
+    });
+    trialIndex++;
+    if (trialIndex < TRIALS.length) {
+      showTrial();
+    } else {
+      showEnd();
+    }
+  }
+
+  yesBtn.addEventListener("click", () => respond("yes"));
+  noBtn.addEventListener("click", () => respond("no"));
+
+  /* Preload next trial's audio while this one runs */
+  if (trialIndex + 1 < TRIALS.length) {
+    const nxt = TRIALS[trialIndex + 1];
+    new Audio(nxt.audio1).preload = "auto";
+    new Audio(nxt.audio2).preload = "auto";
+  }
+}
+
+function showEnd() {
+  screen.innerHTML = `
+    <h1>All done &#127881;</h1>
+    <p class="lead">Thank you for participating!</p>
+    <p class="footer-note">Model assigned this session: ${MODEL} &middot; ${results.length} trials completed</p>
+  `;
+  /* Result saving not wired up yet; keep the data inspectable for now. */
+  console.log("results", results);
+}
+
+showWelcome();
+</script>
+</body>
+</html>
