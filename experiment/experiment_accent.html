@@ -245,7 +245,14 @@ const TRIALS = shuffle(
   )
 );
 
+/* Practice: 3 random trials involving the assigned model's output audio.
+   Responses are not recorded. */
+const PRACTICE_TRIALS = shuffle(
+  TRIALS.filter(t => t.cond.first === "output" || t.cond.second === "output")
+).slice(0, 3);
+
 let trialIndex = 0;
+let practiceIndex = 0;
 let participantId = "";
 const results = [];
 const screen = document.getElementById("screen");
@@ -331,7 +338,7 @@ function showAudioCheck() {
       const answer = btn.dataset.answer;
       if (answer === AUDIO_CHECK.correct) {
         checkAudio.pause();
-        showTrial();
+        showPracticeIntro();
       } else {
         feedback.style.color = "var(--red)";
         feedback.textContent = "Not quite — listen to the clip again and try again.";
@@ -340,13 +347,79 @@ function showAudioCheck() {
   });
 }
 
+function showPracticeIntro() {
+  screen.innerHTML = `
+    <h1>Practice</h1>
+    <p class="lead">You will now do <strong>${PRACTICE_TRIALS.length} practice rounds</strong> to get familiar with the task. They work exactly like the real trials: two clips play once each, then you answer the question.</p>
+    <p class="sub">Practice responses are not recorded.</p>
+    <br>
+    <button class="btn-primary" id="practiceBtn">Start Practice</button>
+  `;
+  document.getElementById("practiceBtn").addEventListener("click", showPractice);
+}
+
+function showPractice() {
+  const t = PRACTICE_TRIALS[practiceIndex];
+  const next = practiceIndex + 1 < PRACTICE_TRIALS.length ? PRACTICE_TRIALS[practiceIndex + 1] : TRIALS[0];
+  runTrial(t, `Practice ${practiceIndex + 1} of ${PRACTICE_TRIALS.length}`,
+           (practiceIndex / PRACTICE_TRIALS.length) * 100, next, () => {
+    practiceIndex++;
+    if (practiceIndex < PRACTICE_TRIALS.length) {
+      showPractice();
+    } else {
+      showPracticeDone();
+    }
+  });
+}
+
+function showPracticeDone() {
+  screen.innerHTML = `
+    <h1>Practice complete</h1>
+    <p class="lead">Great — the main experiment will now begin. There are ${TRIALS.length} trials.</p>
+    <br>
+    <button class="btn-primary" id="mainBtn">Begin Main Experiment</button>
+  `;
+  document.getElementById("mainBtn").addEventListener("click", showTrial);
+}
+
 function showTrial() {
   const t = TRIALS[trialIndex];
-  const pct = (trialIndex / TRIALS.length) * 100;
+  const next = trialIndex + 1 < TRIALS.length ? TRIALS[trialIndex + 1] : null;
+  runTrial(t, `Trial ${trialIndex + 1} of ${TRIALS.length}`,
+           (trialIndex / TRIALS.length) * 100, next, (answer, rtMs) => {
+    const row = {
+      experiment: CONFIG.experimentName,
+      participant: participantId,
+      model: t.model,
+      trial: trialIndex + 1,
+      condition_id: t.cond.id,
+      condition: t.cond.name,
+      group: t.item.group,
+      timbre: t.item.timbre,
+      source: t.item.source,
+      audio1: t.audio1.split("/").pop(),
+      audio2: t.audio2.split("/").pop(),
+      response: answer,
+      same_speaker_truth: t.cond.sameSpeakerTruth,
+      rt_ms: rtMs
+    };
+    results.push(row);
+    saveTrial(row);
+    trialIndex++;
+    if (trialIndex < TRIALS.length) {
+      showTrial();
+    } else {
+      showEnd();
+    }
+  });
+}
 
+/* Renders one two-clip trial screen. Calls onAnswer(answer, rtMs) after a
+   response; preloadTrial's audio is fetched in the background. */
+function runTrial(t, label, pct, preloadTrial, onAnswer) {
   screen.innerHTML = `
     <div class="progress-wrap">
-      <div class="progress-label">Trial ${trialIndex + 1} of ${TRIALS.length}</div>
+      <div class="progress-label">${label}</div>
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>
     <div class="status-line" id="statusLine">Press play when you are ready. The clips play only once.</div>
@@ -464,40 +537,16 @@ function showTrial() {
   function respond(answer) {
     yesBtn.disabled = true;
     noBtn.disabled = true;
-    const row = {
-      experiment: CONFIG.experimentName,
-      participant: participantId,
-      model: t.model,
-      trial: trialIndex + 1,
-      condition_id: t.cond.id,
-      condition: t.cond.name,
-      group: t.item.group,
-      timbre: t.item.timbre,
-      source: t.item.source,
-      audio1: t.audio1.split("/").pop(),
-      audio2: t.audio2.split("/").pop(),
-      response: answer,
-      same_speaker_truth: t.cond.sameSpeakerTruth,
-      rt_ms: Math.round(performance.now() - questionShownAt)
-    };
-    results.push(row);
-    saveTrial(row);
-    trialIndex++;
-    if (trialIndex < TRIALS.length) {
-      showTrial();
-    } else {
-      showEnd();
-    }
+    onAnswer(answer, Math.round(performance.now() - questionShownAt));
   }
 
   yesBtn.addEventListener("click", () => respond("yes"));
   noBtn.addEventListener("click", () => respond("no"));
 
-  /* Preload next trial's audio while this one runs */
-  if (trialIndex + 1 < TRIALS.length) {
-    const nxt = TRIALS[trialIndex + 1];
-    new Audio(nxt.audio1).preload = "auto";
-    new Audio(nxt.audio2).preload = "auto";
+  /* Preload the upcoming trial's audio while this one runs */
+  if (preloadTrial) {
+    new Audio(preloadTrial.audio1).preload = "auto";
+    new Audio(preloadTrial.audio2).preload = "auto";
   }
 }
 
