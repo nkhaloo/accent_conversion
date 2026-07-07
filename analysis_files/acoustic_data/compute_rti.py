@@ -29,8 +29,10 @@ FEATURES = [
     "H1H2c", "H2H4c", "H42Kc", "H2KH5Kc",
     # harmonics-to-noise ratios
     "HNR05", "HNR15", "HNR25", "HNR35",
-    # snack formants + f0
-    "sF1", "sF2", "sF3", "sF4", "sF0",
+    # snack formants, formant bandwidths, f0
+    "sF1", "sF2", "sF3", "sF4",
+    "sB1", "sB2", "sB3", "sB4",
+    "sF0",
     # periodicity / energy
     "CPP", "Energy",
 ]
@@ -161,6 +163,8 @@ def main():
     print(f"RTI defined (non-NaN): {out['RTI'].notna().sum():,} / {len(out):,}")
 
     write_model_feature_table(out)
+    plot_segment_distribution(out)
+    plot_overall_median(out)
 
 
 def write_model_feature_table(out: pd.DataFrame):
@@ -183,13 +187,13 @@ def write_model_feature_table(out: pd.DataFrame):
             print(f"\nmedian RTI -- {rk} / {rt}:")
             print(piv.to_string())
     print(f"\nwrote {OUT_TABLE}")
-    plot_model_feature_bars(tab)
+    plot_model_feature_bars(out)
 
 
-def plot_model_feature_bars(tab: pd.DataFrame):
-    """One grouped-bar figure per rank; features on x, openvoice vs seed_vc bars,
-    timbre and style stacked as two panels. Dashed line at RTI=1 marks the
-    reference's natural variation. Outlier bars are capped and value-labeled."""
+def plot_model_feature_bars(out: pd.DataFrame):
+    """One grouped-bar figure (all ranks pooled); features on x, openvoice vs
+    seed_vc bars, timbre and style stacked as two panels. Outlier bars are
+    capped and value-labeled."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -197,35 +201,114 @@ def plot_model_feature_bars(tab: pd.DataFrame):
     FIG_DIR.mkdir(exist_ok=True)
     colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}   # CVD-safe blue/orange
     caps = {"timbre": 2.2, "style": 4.0}
+    df = out[out["RTI_floored"].notna()]
     x = np.arange(len(FEATURES))
     w = 0.38
-    for rk in ["top5", "bottom5"]:
-        fig, axes = plt.subplots(2, 1, figsize=(12, 8), constrained_layout=True)
-        for ax, rt in zip(axes, ["timbre", "style"]):
-            piv = (tab[(tab["rank"] == rk) & (tab["reference_type"] == rt)]
-                   .pivot(index="feature", columns="model", values="median").reindex(FEATURES))
-            cap = caps[rt]
-            for k, model in enumerate(["openvoice", "seed_vc"]):
-                vals = piv[model].values.astype(float)
-                ax.bar(x + (k - 0.5) * w, np.minimum(vals, cap), w,
-                       label=model, color=colors[model])
-                for xi, v in zip(x + (k - 0.5) * w, vals):
-                    if v > cap:   # outlier clipped: annotate true value
-                        ax.text(xi, cap, f"{v:.1f}", ha="center", va="bottom", fontsize=6)
-            ax.axhline(1.0, color="#666", lw=1, ls="--", zorder=0)
-            ax.set_ylim(0, cap)
-            ax.set_xticks(x)
-            ax.set_xticklabels(FEATURES, rotation=45, ha="right", fontsize=8)
-            ax.set_ylabel("median RTI")
-            ax.set_title(f"{rt} ({'target' if rt == 'timbre' else 'source'})", fontsize=11)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), constrained_layout=True)
+    for ax, rt in zip(axes, ["timbre", "style"]):
+        piv = (df[df["reference_type"] == rt].groupby(["feature", "model"])["RTI_floored"]
+               .median().unstack("model").reindex(FEATURES))
+        cap = caps[rt]
+        for k, model in enumerate(["openvoice", "seed_vc"]):
+            vals = piv[model].values.astype(float)
+            ax.bar(x + (k - 0.5) * w, np.minimum(vals, cap), w,
+                   label=model, color=colors[model])
+            for xi, v in zip(x + (k - 0.5) * w, vals):
+                if v > cap:   # outlier clipped: annotate true value
+                    ax.text(xi, cap, f"{v:.1f}", ha="center", va="bottom", fontsize=6)
+        ax.set_ylim(0, cap)
+        ax.set_xticks(x)
+        ax.set_xticklabels(FEATURES, rotation=45, ha="right", fontsize=8)
+        ax.set_ylabel("median RTI")
+        ax.set_title("Timbre" if rt == "timbre" else "Source", fontsize=12)
+        if rt == "timbre":
             ax.legend(frameon=False, fontsize=9)
-            for sp in ("top", "right"):
-                ax.spines[sp].set_visible(False)
-        fig.suptitle(f"Median RTI by feature and system  ({rk};  dashed = natural variation)", fontsize=12)
-        path = FIG_DIR / f"rti_by_feature_{rk}.png"
-        fig.savefig(path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        print(f"wrote figure -> {path}")
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    path = FIG_DIR / "rti_by_feature.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote figure -> {path}")
+
+
+def plot_segment_distribution(out: pd.DataFrame):
+    """One figure: RTI distribution within each segment, a box per system.
+
+    Two panels (Timbre / Source); each box pools all features and pairings for
+    that segment. Whiskers at 1.5*IQR; extreme fliers hidden and the y-axis
+    capped so the boxes stay readable. Sparse segment ER1 is dropped."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    FIG_DIR.mkdir(exist_ok=True)
+    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}   # CVD-safe blue/orange
+    seg_order = ["AA1", "AE1", "AH0", "AO1", "EH1", "ER0", "IH0", "IH1", "IY1",
+                 "L", "M", "NG", "R", "W"]
+    caps = {"timbre": 6.0, "style": 7.0}
+    df = out[out["RTI_floored"].notna() & out["segment"].isin(seg_order)]
+    x = np.arange(len(seg_order))
+    off, w = 0.2, 0.34
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 9), constrained_layout=True)
+    for ax, rt in zip(axes, ["timbre", "style"]):
+        sub = df[df["reference_type"] == rt]
+        for k, model in enumerate(["openvoice", "seed_vc"]):
+            data = [sub[(sub["model"] == model) & (sub["segment"] == s)]["RTI_floored"].values
+                    for s in seg_order]
+            bp = ax.boxplot(data, positions=x + (k - 0.5) * 2 * off, widths=w,
+                            patch_artist=True, showfliers=False,
+                            medianprops=dict(color="black", lw=1.2))
+            for box in bp["boxes"]:
+                box.set(facecolor=colors[model], edgecolor=colors[model], alpha=0.75)
+            for part in ("whiskers", "caps"):
+                for ln in bp[part]:
+                    ln.set(color=colors[model])
+        ax.set_xticks(x)
+        ax.set_xticklabels(seg_order, fontsize=9)
+        ax.set_ylim(0, caps[rt])
+        ax.set_ylabel("RTI")
+        ax.set_title("Timbre" if rt == "timbre" else "Source", fontsize=12)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    handles = [plt.Rectangle((0, 0), 1, 1, color=colors[m]) for m in ("openvoice", "seed_vc")]
+    fig.legend(handles, ["openvoice", "seed_vc"], frameon=False, fontsize=10,
+               loc="center left", bbox_to_anchor=(1.0, 0.5))
+    path = FIG_DIR / "rti_by_segment_distribution.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote figure -> {path}")
+
+
+def plot_overall_median(out: pd.DataFrame):
+    """Single summary figure: median RTI per system over the ENTIRE dataset,
+    split only by reference type (Timbre vs Source)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    FIG_DIR.mkdir(exist_ok=True)
+    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}
+    med = out[out["RTI_floored"].notna()].groupby(["reference_type", "model"])["RTI_floored"].median()
+    rts, labels = ["timbre", "style"], ["Timbre", "Source"]
+    x = np.arange(len(rts))
+    w = 0.35
+
+    fig, ax = plt.subplots(figsize=(6, 5), constrained_layout=True)
+    for k, model in enumerate(["openvoice", "seed_vc"]):
+        vals = [med.loc[(rt, model)] for rt in rts]
+        bars = ax.bar(x + (k - 0.5) * w, vals, w, label=model, color=colors[model])
+        ax.bar_label(bars, fmt="%.2f", fontsize=9, padding=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel("median RTI")
+    ax.legend(frameon=False, fontsize=9)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    path = FIG_DIR / "rti_overall_median.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote figure -> {path}")
 
 
 if __name__ == "__main__":
