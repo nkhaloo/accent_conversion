@@ -1,8 +1,12 @@
 // Apps Script for the SPEAKER IDENTITY experiment (experiment.html).
-// Setup: paste into Extensions > Apps Script of a Google Sheet, run
-// intialSetup once, then Deploy > New deployment > Web app
-// (Execute as: Me, Who has access: Anyone) and paste the web-app URL
-// into CONFIG.saveUrl in experiment.html.
+// Setup: paste into Extensions > Apps Script of the Google Sheet, then
+// Deploy > New deployment > Web app (Execute as: Me, Who has access:
+// Anyone) and paste the web-app URL into CONFIG.saveUrl in
+// experiment.html. To update the code later WITHOUT changing the URL:
+// Deploy > Manage deployments > edit (pencil) > Version: New version.
+//
+// Running intialSetup is optional — the script falls back to the
+// spreadsheet it is bound to.
 
 var sheetName = 'Sheet1'
 var scriptProp = PropertiesService.getScriptProperties()
@@ -37,8 +41,9 @@ function doPost (e) {
   lock.tryLock(10000)
 
   try {
-    var doc = SpreadsheetApp.openById(scriptProp.getProperty('key'))
-    var sheet = doc.getSheetByName(sheetName)
+    var key = scriptProp.getProperty('key')
+    var doc = key ? SpreadsheetApp.openById(key) : SpreadsheetApp.getActiveSpreadsheet()
+    var sheet = doc.getSheetByName(sheetName) || doc.getSheets()[0]
 
     if (sheet.getLastRow() === 0) {
       sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
@@ -58,9 +63,9 @@ function doPost (e) {
       .setMimeType(ContentService.MimeType.JSON)
   }
 
-  catch (e) {
+  catch (err) {
     return ContentService
-      .createTextOutput(JSON.stringify({ 'result': 'error', 'error': e }))
+      .createTextOutput(JSON.stringify({ 'result': 'error', 'error': err.message || String(err) }))
       .setMimeType(ContentService.MimeType.JSON)
   }
 
