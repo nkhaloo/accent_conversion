@@ -1,8 +1,8 @@
-// Apps Script for the SPEAKER IDENTITY experiment (experiment.html).
+// Apps Script for the ACCENT/DIALECT experiment (experiment_accent.html).
 // Setup: paste into Extensions > Apps Script of a Google Sheet, run
 // intialSetup once, then Deploy > New deployment > Web app
 // (Execute as: Me, Who has access: Anyone) and paste the web-app URL
-// into CONFIG.saveUrl in experiment.html.
+// into CONFIG.saveUrl in experiment_accent.html.
 
 var sheetName = 'Sheet1'
 var scriptProp = PropertiesService.getScriptProperties()

@@ -138,7 +138,10 @@ const CONFIG = {
   pageTitle: "Accent Perception Experiment",
   question: "Do the speakers in these clips have the same accent/dialect of English?",
   yesLabel: "Yes, same accent",
-  noLabel: "No, different accents"
+  noLabel: "No, different accents",
+  /* Google Apps Script web-app URL (Deploy > New deployment > Web app).
+     Each trial is POSTed here as it is answered. */
+  saveUrl: "PASTE_ACCENT_APPS_SCRIPT_URL_HERE"
 };
 
 const AUDIO_BASE = "../analysis_files/sentence_extracts/all_files";
@@ -237,6 +240,23 @@ let trialIndex = 0;
 let participantId = "";
 const results = [];
 const screen = document.getElementById("screen");
+
+/* POST one trial row to the Google Apps Script endpoint. Fire-and-forget:
+   Apps Script web apps don't send CORS headers, so we use no-cors and
+   can't read the response. */
+function saveTrial(row) {
+  if (!CONFIG.saveUrl || CONFIG.saveUrl.startsWith("PASTE")) {
+    console.warn("CONFIG.saveUrl not set — trial not saved:", row);
+    return;
+  }
+  fetch(CONFIG.saveUrl, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(row).toString()
+  }).catch(err => console.warn("saveTrial failed:", err));
+}
 
 /* ============================================================
    SCREENS
@@ -383,7 +403,7 @@ function showTrial() {
   function respond(answer) {
     yesBtn.disabled = true;
     noBtn.disabled = true;
-    results.push({
+    const row = {
       experiment: CONFIG.experimentName,
       participant: participantId,
       model: t.model,
@@ -397,9 +417,10 @@ function showTrial() {
       audio2: t.audio2.split("/").pop(),
       response: answer,
       same_speaker_truth: t.cond.sameSpeakerTruth,
-      rt_ms: Math.round(performance.now() - questionShownAt),
-      timestamp: new Date().toISOString()
-    });
+      rt_ms: Math.round(performance.now() - questionShownAt)
+    };
+    results.push(row);
+    saveTrial(row);
     trialIndex++;
     if (trialIndex < TRIALS.length) {
       showTrial();
@@ -422,10 +443,9 @@ function showTrial() {
 function showEnd() {
   screen.innerHTML = `
     <h1>All done &#127881;</h1>
-    <p class="lead">Thank you for participating!</p>
+    <p class="lead">Thank you for participating! Your responses have been recorded.</p>
     <p class="footer-note">Model assigned this session: ${MODEL} &middot; ${results.length} trials completed</p>
   `;
-  /* Result saving not wired up yet; keep the data inspectable for now. */
   console.log("results", results);
 }
 
