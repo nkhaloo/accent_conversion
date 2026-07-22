@@ -45,7 +45,8 @@ var HEADERS = [
   'neurodivergent_desc',
   'technologies_used',
   'ai_use_frequency',
-  'ai_attitude'
+  'ai_attitude',
+  'final_feedback'
 ]
 
 function intialSetup () {

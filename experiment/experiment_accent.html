@@ -786,7 +786,27 @@ function showDemographics() {
       ai_attitude: getRadio("aiatt")
     };
     btn.disabled = true;
-    saveTrial(row);
+    /* Feedback is appended to this row and the whole thing is sent on the
+       feedback screen's submit. */
+    showFeedback(row);
+  });
+}
+
+/* Optional written feedback; sent together with the demographics row
+   (final_feedback column). */
+function showFeedback(demoRow) {
+  screen.innerHTML = `
+    <h1>Final Feedback</h1>
+    <p class="lead">Do you have any comments about the experiment? (optional)</p>
+    <div class="demo-block" style="border:none; padding:0;">
+      <textarea id="feedbackText" style="min-height:120px;" placeholder="Type any feedback here…"></textarea>
+    </div>
+    <button class="btn-primary" id="feedbackBtn" style="margin-top:18px;">Submit</button>
+  `;
+  document.getElementById("feedbackBtn").addEventListener("click", () => {
+    demoRow.final_feedback = document.getElementById("feedbackText").value.trim();
+    document.getElementById("feedbackBtn").disabled = true;
+    saveTrial(demoRow);
     showEnd();
   });
 }
