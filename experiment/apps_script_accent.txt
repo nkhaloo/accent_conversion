@@ -12,7 +12,10 @@ var sheetName = 'Sheet1'
 var scriptProp = PropertiesService.getScriptProperties()
 
 // One row is appended per trial, in this column order. The header row
-// is created automatically on the first POST if the sheet is empty.
+// is created automatically on the first POST if the sheet is empty, and
+// any missing columns are appended to an existing header row. The
+// demographic columns are filled by one final row per participant
+// (trial = "demographics").
 var HEADERS = [
   'timestamp',
   'experiment',
@@ -29,7 +32,20 @@ var HEADERS = [
   'audio2',
   'response',
   'same_speaker_truth',
-  'rt_ms'
+  'rt_ms',
+  'age',
+  'ethnicity',
+  'dialect',
+  'first_language',
+  'other_languages',
+  'gender',
+  'speech_disorder',
+  'speech_disorder_desc',
+  'neurodivergent',
+  'neurodivergent_desc',
+  'technologies_used',
+  'ai_use_frequency',
+  'ai_attitude'
 ]
 
 function intialSetup () {
@@ -48,6 +64,14 @@ function doPost (e) {
 
     if (sheet.getLastRow() === 0) {
       sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
+    }
+
+    // Append any HEADERS columns missing from an existing header row
+    // (e.g. the demographic columns added after data collection began).
+    var existing = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    var missing = HEADERS.filter(function (h) { return existing.indexOf(h) === -1 })
+    if (missing.length > 0) {
+      sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing])
     }
 
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
