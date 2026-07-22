@@ -533,6 +533,8 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
       </div>
     </div>
     <button class="btn-primary" id="playBtn">&#9654;&nbsp; Play Clips</button>
+    <!-- TESTING ONLY: remove before launch -->
+    <div><button id="skipBtn" style="margin-top:14px; background:none; border:1px dashed var(--border); color:var(--muted); font-size:0.8rem; font-weight:500; padding:6px 14px;">skip (testing)</button></div>
     <div id="qa" class="fade hidden-soft" style="margin-top:34px;">
       <div class="question">${CONFIG.question}</div>
       <div class="answers">
@@ -639,6 +641,17 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
 
   yesBtn.addEventListener("click", () => respond("yes"));
   noBtn.addEventListener("click", () => respond("no"));
+
+  /* TESTING ONLY: skip this trial immediately. Stops any playing audio and
+     answers "skipped" (rows land in the sheet marked as such). Remove the
+     button above and this handler before launch. */
+  document.getElementById("skipBtn").addEventListener("click", () => {
+    a1.onended = a1.onerror = a2.onended = a2.onerror = null;
+    a1.pause();
+    a2.pause();
+    if (questionShownAt === null) questionShownAt = performance.now();
+    respond("skipped");
+  });
 
   /* Preload the upcoming trial's audio while this one runs */
   if (preloadTrial) {
