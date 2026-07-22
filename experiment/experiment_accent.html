@@ -191,35 +191,33 @@ const AUDIO_BASE = "../analysis_files/sentence_extracts/all_files_normalized";
    STIMULI
    Each item = one model output: a timbre reference (speaker
    identity) + a style/source reference (accent) fed to the model.
-   refPrefix = where that timbre speaker's reference wavs actually
-   live on disk (a few are deduplicated across model folders).
-   Style/source reference wavs are all deduplicated into
-   openvoice_bottom5_source_*.
+   Only output files are model-generated; reference_* and source_*
+   files are natural human recordings shared across both models.
    ============================================================ */
 const ITEMS = {
   openvoice: [
-    { group: "bottom5", timbre: "gujarati7__1504",  source: "english200__667",  refPrefix: "openvoice_bottom5" },
-    { group: "bottom5", timbre: "gujarati8__1678",  source: "english200__667",  refPrefix: "openvoice_bottom5" },
-    { group: "bottom5", timbre: "gujarati9__2041",  source: "english584__2197", refPrefix: "openvoice_bottom5" },
-    { group: "bottom5", timbre: "hindi12__1440",    source: "english200__667",  refPrefix: "openvoice_bottom5" },
-    { group: "bottom5", timbre: "hindi7__867",      source: "english200__667",  refPrefix: "openvoice_bottom5" },
-    { group: "top5",    timbre: "gujarati11__2301", source: "english584__2197", refPrefix: "openvoice_top5" },
-    { group: "top5",    timbre: "gujarati13__2409", source: "english200__667",  refPrefix: "openvoice_top5" },
-    { group: "top5",    timbre: "gujarati17__2824", source: "english200__667",  refPrefix: "openvoice_top5" },
-    { group: "top5",    timbre: "hindi13__1633",    source: "english200__667",  refPrefix: "openvoice_top5" },
-    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197", refPrefix: "openvoice_top5" }
+    { group: "bottom5", timbre: "gujarati7__1504",  source: "english200__667" },
+    { group: "bottom5", timbre: "gujarati8__1678",  source: "english200__667" },
+    { group: "bottom5", timbre: "gujarati9__2041",  source: "english584__2197" },
+    { group: "bottom5", timbre: "hindi12__1440",    source: "english200__667" },
+    { group: "bottom5", timbre: "hindi7__867",      source: "english200__667" },
+    { group: "top5",    timbre: "gujarati11__2301", source: "english584__2197" },
+    { group: "top5",    timbre: "gujarati13__2409", source: "english200__667" },
+    { group: "top5",    timbre: "gujarati17__2824", source: "english200__667" },
+    { group: "top5",    timbre: "hindi13__1633",    source: "english200__667" },
+    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197" }
   ],
   seed_vc: [
-    { group: "bottom5", timbre: "gujarati4__610",   source: "english200__667",  refPrefix: "seed_vc_bottom5" },
-    { group: "bottom5", timbre: "hindi13__1633",    source: "english200__667",  refPrefix: "openvoice_top5" },
-    { group: "bottom5", timbre: "hindi16__1966",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
-    { group: "bottom5", timbre: "hindi21__2236",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
-    { group: "bottom5", timbre: "hindi26__2354",    source: "english584__2197", refPrefix: "seed_vc_bottom5" },
-    { group: "top5",    timbre: "gujarati16__2558", source: "english200__667",  refPrefix: "seed_vc_top5" },
-    { group: "top5",    timbre: "gujarati5__1016",  source: "english200__667",  refPrefix: "seed_vc_top5" },
-    { group: "top5",    timbre: "hindi10__1202",    source: "english200__667",  refPrefix: "seed_vc_top5" },
-    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197", refPrefix: "openvoice_top5" },
-    { group: "top5",    timbre: "hindi2__587",      source: "english584__2197", refPrefix: "seed_vc_top5" }
+    { group: "bottom5", timbre: "gujarati4__610",   source: "english200__667" },
+    { group: "bottom5", timbre: "hindi13__1633",    source: "english200__667" },
+    { group: "bottom5", timbre: "hindi16__1966",    source: "english584__2197" },
+    { group: "bottom5", timbre: "hindi21__2236",    source: "english584__2197" },
+    { group: "bottom5", timbre: "hindi26__2354",    source: "english584__2197" },
+    { group: "top5",    timbre: "gujarati16__2558", source: "english200__667" },
+    { group: "top5",    timbre: "gujarati5__1016",  source: "english200__667" },
+    { group: "top5",    timbre: "hindi10__1202",    source: "english200__667" },
+    { group: "top5",    timbre: "hindi19__2206",    source: "english584__2197" },
+    { group: "top5",    timbre: "hindi2__587",      source: "english584__2197" }
   ]
 };
 
@@ -228,10 +226,10 @@ function outputFile(model, item, n) {
   return `${AUDIO_BASE}/${model}_${item.group}_output_sentence${n}_timbre-${item.timbre}__source-${item.source}__${model}_s${n}.wav`;
 }
 function timbreRefFile(item, n) {
-  return `${AUDIO_BASE}/${item.refPrefix}_reference_sentence${n}_${item.timbre}_s${n}.wav`;
+  return `${AUDIO_BASE}/reference_sentence${n}_${item.timbre}_s${n}.wav`;
 }
 function sourceRefFile(item, n) {
-  return `${AUDIO_BASE}/openvoice_bottom5_source_sentence${n}_${item.source}_s${n}.wav`;
+  return `${AUDIO_BASE}/source_sentence${n}_${item.source}_s${n}.wav`;
 }
 
 /* Conditions: [what plays first (sentence 1), what plays second (sentence 2)].
