@@ -177,7 +177,7 @@
 const CONFIG = {
   experimentName: "accent_dialect",
   pageTitle: "Accent Perception Experiment",
-  question: "Do the speakers in these clips have the same accent/dialect of English?",
+  question: "Do the speakers in these clips have the same accent of English?",
   yesLabel: "Yes, same accent",
   noLabel: "No, different accents",
   /* Google Apps Script web-app URL (Deploy > New deployment > Web app).
@@ -367,8 +367,8 @@ function showNotice() {
   screen.innerHTML = `
     <h1>Before you begin</h1>
     <div class="notice">
-      <p>Your task is to judge whether the two clips in each trial share the <strong>same accent or dialect of English</strong>.</p>
-      <p style="margin-top:14px;">Some of the speakers you hear are able to speak in more than one accent, so the two clips may come from the <strong>exact same person</strong> producing two different accents &mdash; for example, one clip in an Indian accent of English and the other with no distinct accent. Focus only on the accent or dialect itself, not on whether the clips seem to come from the same person.</p>
+      <p>Your task is to judge whether the two clips in each trial share the <strong>same accent of English</strong>.</p>
+      <p style="margin-top:14px;">Some of the speakers you hear are able to speak in more than one accent, so the two clips may come from the <strong>exact same person</strong> producing two different accents &mdash; for example, one clip in an Indian accent of English and the other with no distinct accent. Focus only on the accent itself, not on whether the clips seem to come from the same person.</p>
     </div>
     <button class="btn-primary" id="noticeBtn">Continue</button>
   `;
@@ -377,10 +377,9 @@ function showNotice() {
 
 function showAccentNotice() {
   screen.innerHTML = `
-    <h1>What is an accent or dialect?</h1>
+    <h1>What is an accent?</h1>
     <div class="notice">
       <p>An <strong>accent</strong> is the way English is pronounced &mdash; how vowels and consonants are formed, along with the rhythm and intonation of speech &mdash; which often reflects where a speaker is from or what other languages they speak.</p>
-      <p style="margin-top:14px;">A <strong>dialect</strong> is broader, and can also include differences in word choice and grammar.</p>
       <p style="margin-top:14px;">For this study, simply listen for whether the two clips sound like they come from the <strong>same regional or language background</strong>. There are no right or wrong answers &mdash; just go with your impression.</p>
     </div>
     <button class="btn-primary" id="accentBtn">Continue</button>
@@ -393,7 +392,7 @@ function showQualityNotice() {
     <h1>One more thing</h1>
     <div class="notice">
       <p>Please <strong>ignore differences in audio quality</strong>. The clips were recorded in different environments, so two clips may differ in loudness, background noise, echo, or overall recording quality &mdash; even when the accent is the same.</p>
-      <p style="margin-top:14px;">Base your judgments only on the accent or dialect you hear, not on the recording conditions.</p>
+      <p style="margin-top:14px;">Base your judgments only on the accent you hear, not on the recording conditions.</p>
     </div>
     <button class="btn-primary" id="qualityBtn">Continue</button>
   `;
