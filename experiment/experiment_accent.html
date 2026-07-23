@@ -283,15 +283,12 @@ function dedupeTrials(trials) {
 /* Randomize which role plays first on each trial (coin flip), so
    presentation order is not confounded with condition. Applied after
    dedupe so the canonical pair key still catches duplicates. The clip
-   that plays first is always sentence 1. clip_order is saved with each
-   trial: "standard" = cond.first played first, "reversed" = swapped. */
+   that plays first is always sentence 1. The saved audio1/audio2
+   filenames record the actual play order (audio1 always plays first). */
 function randomizeOrder(trials) {
   return trials.map(t => {
-    if (t.cond.first === t.cond.second || Math.random() < 0.5) {
-      return Object.assign({}, t, { clip_order: "standard" });
-    }
+    if (t.cond.first === t.cond.second || Math.random() < 0.5) return t;
     return Object.assign({}, t, {
-      clip_order: "reversed",
       audio1: fileFor(t.cond.second, MODEL, t.item, 1),
       audio2: fileFor(t.cond.first, MODEL, t.item, 2)
     });
@@ -481,7 +478,6 @@ function showTrial() {
       group: t.item.group,
       timbre: t.item.timbre,
       source: t.item.source,
-      clip_order: t.clip_order,
       audio1: t.audio1.split("/").pop(),
       audio2: t.audio2.split("/").pop(),
       response: answer,

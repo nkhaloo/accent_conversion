@@ -28,7 +28,6 @@ var HEADERS = [
   'group',
   'timbre',
   'source',
-  'clip_order',
   'audio1',
   'audio2',
   'response',
