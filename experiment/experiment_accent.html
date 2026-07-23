@@ -554,10 +554,20 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
   const yesBtn = document.getElementById("yesBtn");
   const noBtn = document.getElementById("noBtn");
 
-  const a1 = new Audio(t.audio1);
-  const a2 = new Audio(t.audio2);
-  a1.preload = "auto";
-  a2.preload = "auto";
+  /* One media element plays both clips. Playing clip 1 inside the button's
+     tap gesture activates the element, so mobile browsers (iOS Safari in
+     particular) then allow the programmatic src-swap + play() for clip 2.
+     This replaces the old muted-play "unlock" hack, whose deferred
+     pause/rewind could fire late on phones and cut clip 2 short. */
+  const player = new Audio();
+  player.preload = "auto";
+  player.src = t.audio1;
+  player.load();
+  /* Warm the browser cache for clip 2 so the src swap starts instantly. */
+  const clip2Prefetch = new Audio();
+  clip2Prefetch.preload = "auto";
+  clip2Prefetch.src = t.audio2;
+  clip2Prefetch.load();
   let questionShownAt = null;
 
   function reportAudioProblem(src) {
@@ -578,20 +588,22 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
   function playSecond() {
     clip2El.classList.add("playing");
     state2.textContent = "playing…";
-    a2.onended = () => {
+    player.onended = () => {
       clip2El.classList.remove("playing");
       clip2El.classList.add("done");
       state2.textContent = "played";
       statusLine.textContent = "";
       showQuestion();
     };
-    a2.onerror = () => {
+    player.onerror = () => {
       clip2El.classList.add("done");
       state2.textContent = "audio error";
       reportAudioProblem(t.audio2);
       showQuestion();
     };
-    a2.play().catch(() => {
+    player.src = t.audio2;
+    player.load();
+    player.play().catch(() => {
       state2.textContent = "audio error";
       reportAudioProblem(t.audio2);
       showQuestion();
@@ -602,31 +614,21 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
     playBtn.disabled = true;
     playBtn.style.visibility = "hidden";
     statusLine.textContent = "Listen carefully — the clips play only once.";
-    /* Unlock clip 2 inside this user gesture so strict autoplay policies
-       (Safari) allow it to start later from the "ended" event. */
-    a2.muted = true;
-    const unlock = a2.play();
-    if (unlock && unlock.then) {
-      unlock.then(() => { a2.pause(); a2.currentTime = 0; a2.muted = false; })
-            .catch(() => { a2.muted = false; });
-    } else {
-      a2.muted = false;
-    }
     clip1El.classList.add("playing");
     state1.textContent = "playing…";
-    a1.onended = () => {
+    player.onended = () => {
       clip1El.classList.remove("playing");
       clip1El.classList.add("done");
       state1.textContent = "played";
       setTimeout(playSecond, 600);
     };
-    a1.onerror = () => {
+    player.onerror = () => {
       clip1El.classList.add("done");
       state1.textContent = "audio error";
       reportAudioProblem(t.audio1);
       setTimeout(playSecond, 600);
     };
-    a1.play().catch(() => {
+    player.play().catch(() => {
       state1.textContent = "audio error";
       reportAudioProblem(t.audio1);
       setTimeout(playSecond, 600);
@@ -646,17 +648,20 @@ function runTrial(t, label, pct, preloadTrial, onAnswer) {
      answers "skipped" (rows land in the sheet marked as such). Remove the
      button above and this handler before launch. */
   document.getElementById("skipBtn").addEventListener("click", () => {
-    a1.onended = a1.onerror = a2.onended = a2.onerror = null;
-    a1.pause();
-    a2.pause();
+    player.onended = player.onerror = null;
+    player.pause();
     if (questionShownAt === null) questionShownAt = performance.now();
     respond("skipped");
   });
 
   /* Preload the upcoming trial's audio while this one runs */
   if (preloadTrial) {
-    new Audio(preloadTrial.audio1).preload = "auto";
-    new Audio(preloadTrial.audio2).preload = "auto";
+    [preloadTrial.audio1, preloadTrial.audio2].forEach(url => {
+      const a = new Audio();
+      a.preload = "auto";
+      a.src = url;
+      a.load();
+    });
   }
 }
 
