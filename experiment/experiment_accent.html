@@ -369,7 +369,10 @@ function showWelcome() {
 function showNotice() {
   screen.innerHTML = `
     <h1>Before you begin</h1>
-    <div class="notice">In this experiment, you may be hearing speakers who are capable of speaking in different accents. If applicable, try to distinguish between accent/dialect from the sound of one's voice.</div>
+    <div class="notice">
+      <p>In this experiment, some of the speakers you hear are capable of speaking in more than one accent. This means the two clips in a trial may feature the <strong>exact same speaker</strong>, speaking fluently in two different accents. For example, clip 1 might feature a speaker using an Indian accent of English, while clip 2 features that same speaker using a more mainstream American accent.</p>
+      <p style="margin-top:14px;">When making your judgments, try to separate a speaker's accent or dialect from the sound of their voice itself.</p>
+    </div>
     <button class="btn-primary" id="noticeBtn">Continue</button>
   `;
   document.getElementById("noticeBtn").addEventListener("click", showAudioCheck);
