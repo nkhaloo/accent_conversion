@@ -295,6 +295,25 @@ function randomizeOrder(trials) {
   });
 }
 
+/* Two trials directly comparing the two distinct source speakers to
+   each other. Both are native-English sources (same accent, different
+   people). Each sentence is counterbalanced across the two speakers:
+   A(s1) vs B(s2) and B(s1) vs A(s2). */
+function crossSourceTrials(model) {
+  const sources = [...new Set(ITEMS[model].map(it => it.source))];
+  if (sources.length < 2) return [];
+  const [a, b] = sources;
+  const cond = { id: 6, name: "sourceRef_vs_sourceRef_cross", first: "sourceRef", second: "sourceRef", sameSpeakerTruth: "same" };
+  const mk = (s1, s2) => ({
+    model,
+    item: { group: "NA", timbre: "NA", source: s1 + "__vs__" + s2 },
+    cond,
+    audio1: sourceRefFile({ source: s1 }, 1),
+    audio2: sourceRefFile({ source: s2 }, 2)
+  });
+  return [mk(a, b), mk(b, a)];
+}
+
 const TRIALS = shuffle(randomizeOrder(dedupeTrials(
   ITEMS[MODEL].flatMap(item =>
     CONDITIONS.map(cond => ({
@@ -305,7 +324,7 @@ const TRIALS = shuffle(randomizeOrder(dedupeTrials(
       audio2: fileFor(cond.second, MODEL, item, 2)
     }))
   )
-)));
+)).concat(crossSourceTrials(MODEL)));
 
 /* Practice: 3 random trials involving the assigned model's output audio.
    Responses are not recorded. */
