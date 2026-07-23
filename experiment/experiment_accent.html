@@ -372,7 +372,19 @@ function showNotice() {
     </div>
     <button class="btn-primary" id="noticeBtn">Continue</button>
   `;
-  document.getElementById("noticeBtn").addEventListener("click", showAudioCheck);
+  document.getElementById("noticeBtn").addEventListener("click", showQualityNotice);
+}
+
+function showQualityNotice() {
+  screen.innerHTML = `
+    <h1>One more thing</h1>
+    <div class="notice">
+      <p>Please also <strong>ignore differences in audio quality</strong>. The clips were recorded in different environments, so two clips may differ in loudness, background noise, echo, or overall recording quality &mdash; even when the speaker is the same.</p>
+      <p style="margin-top:14px;">Base your judgments only on the speakers' accent or dialect, not on the recording conditions.</p>
+    </div>
+    <button class="btn-primary" id="qualityBtn">Continue</button>
+  `;
+  document.getElementById("qualityBtn").addEventListener("click", showAudioCheck);
 }
 
 /* ============================================================
