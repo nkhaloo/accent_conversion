@@ -232,7 +232,9 @@ function sourceRefFile(item, n) {
   return `${AUDIO_BASE}/source_sentence${n}_${item.source}_s${n}.wav`;
 }
 
-/* Conditions: [what plays first (sentence 1), what plays second (sentence 2)].
+/* Conditions: first/second are canonical roles; which one actually plays
+   first is randomized per trial (see randomizeOrder). The clip that plays
+   first is always sentence 1, the second always sentence 2.
    sameSpeakerTruth = ground truth where it is defined independently of the
    model (NA when a model output is involved). */
 const CONDITIONS = [
@@ -278,7 +280,25 @@ function dedupeTrials(trials) {
   });
 }
 
-const TRIALS = shuffle(dedupeTrials(
+/* Randomize which role plays first on each trial (coin flip), so
+   presentation order is not confounded with condition. Applied after
+   dedupe so the canonical pair key still catches duplicates. The clip
+   that plays first is always sentence 1. clip_order is saved with each
+   trial: "standard" = cond.first played first, "reversed" = swapped. */
+function randomizeOrder(trials) {
+  return trials.map(t => {
+    if (t.cond.first === t.cond.second || Math.random() < 0.5) {
+      return Object.assign({}, t, { clip_order: "standard" });
+    }
+    return Object.assign({}, t, {
+      clip_order: "reversed",
+      audio1: fileFor(t.cond.second, MODEL, t.item, 1),
+      audio2: fileFor(t.cond.first, MODEL, t.item, 2)
+    });
+  });
+}
+
+const TRIALS = shuffle(randomizeOrder(dedupeTrials(
   ITEMS[MODEL].flatMap(item =>
     CONDITIONS.map(cond => ({
       model: MODEL,
@@ -288,7 +308,7 @@ const TRIALS = shuffle(dedupeTrials(
       audio2: fileFor(cond.second, MODEL, item, 2)
     }))
   )
-));
+)));
 
 /* Practice: 3 random trials involving the assigned model's output audio.
    Responses are not recorded. */
@@ -458,6 +478,7 @@ function showTrial() {
       group: t.item.group,
       timbre: t.item.timbre,
       source: t.item.source,
+      clip_order: t.clip_order,
       audio1: t.audio1.split("/").pop(),
       audio2: t.audio2.split("/").pop(),
       response: answer,
