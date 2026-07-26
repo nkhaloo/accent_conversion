@@ -35,6 +35,7 @@ var HEADERS = [
   'rt_ms',
   'age',
   'ethnicity',
+  'ethnicity_other',
   'dialect',
   'first_language',
   'other_languages',

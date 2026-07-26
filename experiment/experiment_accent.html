@@ -387,7 +387,8 @@ function showNotice() {
     <h1>Before you begin</h1>
     <div class="notice">
       <p>Your task is to judge whether the two clips in each trial share the <strong>same accent of English</strong>.</p>
-      <p style="margin-top:14px;">Some of the speakers you hear are able to speak in more than one accent, so the two clips may come from the <strong>exact same person</strong> producing two different accents &mdash; for example, one clip in an Indian accent of English and the other with no distinct accent. Focus only on the accent itself, not on whether the clips seem to come from the same person.</p>
+      <p style="margin-top:14px;">In this experiment, some of the speakers you hear are voice actors who are capable of speaking in more than one accent. This means the two clips in a trial may feature the <strong>exact same speaker</strong>, speaking fluently in two different accents. For example, clip 1 might feature a speaker using an Indian accent of English, while clip 2 features that same speaker using an American English accent.</p>
+      <p style="margin-top:14px;">When making your judgments, try to separate a speaker's accent or dialect from the sound of their voice itself.</p>
     </div>
     <button class="btn-primary" id="noticeBtn">Continue</button>
   `;
@@ -740,9 +741,9 @@ function showDemographics() {
   ["18–24","25–34","35–44","45–54","55+"].forEach(opt => { html += `<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`; });
   html += `</div>`;
 
-  html += `<div class="demo-block"><p>Which race/ethnicity do you most strongly identify with?</p>`;
+  html += `<div class="demo-block"><p>Which race/ethnicity do you most strongly identify with? You may select all that apply.</p>`;
   ["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt => { html += `<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`; });
-  html += `</div>`;
+  html += `<div id="otherEthBox" class="hidden"><p>Please specify:</p><textarea id="otherEthText"></textarea></div></div>`;
 
   html += `<div class="demo-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;
   ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt => { html += `<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`; });
@@ -768,11 +769,11 @@ function showDemographics() {
   ["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt => { html += `<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`; });
   html += `</div>`;
 
-  html += `<div class="demo-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;
+  html += `<div class="demo-block"><p>How often do you interact with AI voices?</p>`;
   ["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt => { html += `<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`; });
   html += `</div>`;
 
-  html += `<div class="demo-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p>`;
+  html += `<div class="demo-block"><p>In general, how do you feel about AI voices?</p>`;
   for (let v = 1; v <= 7; v++) {
     let label = "";
     if (v === 1) label = "Very negative";
@@ -803,9 +804,19 @@ function showDemographics() {
   toggleConditional("speech", "Yes", "speechDescBox");
   toggleConditional("neuro", "Yes", "neuroDescBox");
 
+  /* Ethnicity is a checkbox group, so its "Other" box has its own handler. */
+  const ethOther = document.querySelector('input[name="ethnicity"][value="Other"]');
+  ethOther.addEventListener("change", () => {
+    const boxEl = document.getElementById("otherEthBox");
+    if (ethOther.checked) { boxEl.classList.remove("hidden"); }
+    else { boxEl.classList.add("hidden"); document.getElementById("otherEthText").value = ""; }
+    updateBtn();
+  });
+
   function allDemoAnswered() {
     const age = document.querySelector('input[name="age"]:checked');
     const eth = document.querySelectorAll('input[name="ethnicity"]:checked').length > 0;
+    if (ethOther.checked && !document.getElementById("otherEthText").value.trim()) return false;
     const dialect = document.querySelector('input[name="dialect"]:checked');
     const gender = document.querySelector('input[name="gender"]:checked');
     const first = document.querySelector('input[name="firstlang"]:checked');
@@ -841,6 +852,7 @@ function showDemographics() {
       trial: "demographics",
       age: getRadio("age"),
       ethnicity: getChecks("ethnicity"),
+      ethnicity_other: document.querySelector('input[name="ethnicity"][value="Other"]').checked ? (document.getElementById("otherEthText").value || "") : "",
       dialect: getRadio("dialect"),
       first_language: first,
       other_languages: first === "English and another language" ? (document.getElementById("otherLangText").value || "") : "",
