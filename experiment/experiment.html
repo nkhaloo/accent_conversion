@@ -163,6 +163,45 @@
   }
   .demo-block textarea:focus { border-color: var(--accent); }
   .hidden { display: none; }
+
+  /* consent */
+  .consent {
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 18px 0 22px;
+    max-height: 55vh;
+    overflow-y: auto;
+  }
+  .consent h2 {
+    font-size: 1.02rem;
+    margin: 20px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .consent h2:first-child { margin-top: 0; }
+  .consent p { font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; }
+  .consent p:last-child { margin-bottom: 0; }
+  .consent a { color: var(--accent); }
+  .consent-agree {
+    text-align: left;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .consent-agree input { margin-top: 4px; }
+  .completion-link {
+    display: inline-block;
+    word-break: break-all;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 6px;
+  }
 </style>
 </head>
 <body>
@@ -182,7 +221,10 @@ const CONFIG = {
   noLabel: "No, different speakers",
   /* Google Apps Script web-app URL (Deploy > New deployment > Web app).
      Each trial is POSTed here as it is answered. */
-  saveUrl: "https://script.google.com/macros/s/AKfycby0rxL5pIMtzA2jl7l3zOwD4N9dMdObVdtVv0suFAt2GfYUFE_kZlaY9Esvdjk6Cu_Vwg/exec"
+  saveUrl: "https://script.google.com/macros/s/AKfycby0rxL5pIMtzA2jl7l3zOwD4N9dMdObVdtVv0suFAt2GfYUFE_kZlaY9Esvdjk6Cu_Vwg/exec",
+  /* Prolific completion URL, shown on the final screen so participants can
+     mark the submission complete and be paid. */
+  completionUrl: "https://app.prolific.com/submissions/complete?cc=C11321T9"
 };
 
 const AUDIO_BASE = "../analysis_files/sentence_extracts/all_files_normalized";
@@ -359,6 +401,50 @@ function saveTrial(row) {
 /* ============================================================
    SCREENS
    ============================================================ */
+
+/* IRB consent form. Shown first; participants must tick the agreement
+   box before they can continue to the experiment. */
+function showConsent() {
+  screen.innerHTML = `
+    <h1>Consent to Participate in Research</h1>
+    <div class="consent">
+      <h2>Introduction</h2>
+      <p>This research is being conducted by Drs. Nicole Holliday (University of California, Berkeley) and Melissa Baese-Berk (University of Chicago), alongside graduate student Noah Khaloo (University of California, San Diego). This survey seeks to understand how listeners evaluate different types of voices.</p>
+      <p>You will be presented with 44 recorded sound clips of several voices reading phrases. You will then be asked to respond to questions about the voices. The survey will take about 25 minutes to complete.</p>
+
+      <h2>Risks/Discomforts</h2>
+      <p>We are unaware of any risks due to involvement in this study.</p>
+
+      <h2>Benefits</h2>
+      <p>There are no direct benefits for participants. However, it is hoped that through your participation, researchers will learn more about how listeners use voices in identification and the formation of social judgments.</p>
+
+      <h2>Confidentiality</h2>
+      <p>To help protect the confidentiality of your information, your data will be stored without any identifying information (e.g. IP addresses) on password protected computers, hard drives, and on Box. All data obtained from participants will be kept confidential and will only be reported in an aggregate format (by reporting only combined results and never reporting individual ones). All questionnaires will be concealed, and no one other than then primary investigators and assistant researchers listed below will have access to them.</p>
+
+      <h2>Compensation</h2>
+      <p>You will receive compensation as indicated on Prolific for completing the survey. To receive payment, you will need to enter your Prolific ID in the survey. At the end of the survey, you will receive a completion URL, which you should click on to notify Prolific that you have completed the survey, after which you will receive your compensation. You will be asked additional demographic questions to confirm that you are eligible to complete the survey. If you are not eligible to complete the survey, you will not receive compensation.</p>
+
+      <h2>Participation</h2>
+      <p>Participation in this research study is completely voluntary. You have the right to withdraw at any time or refuse to participate entirely. If you decide to stop participating at any time, you will not be penalized or lose any benefits for which you would otherwise qualify; you must complete the survey and match demographic requirements to receive payment. If you desire to withdraw, please close your internet browser and notify one of the investigators at this email: (<a href="mailto:nicole.holliday@berkeley.edu">nicole.holliday@berkeley.edu</a>).</p>
+
+      <h2>Questions about the Research</h2>
+      <p>If you have questions regarding this study, you may contact Dr. Nicole Holliday at <a href="mailto:nicole.holliday@berkeley.edu">nicole.holliday@berkeley.edu</a>.</p>
+
+      <h2>Questions about your Rights as Research Participants</h2>
+      <p>If you have questions you do not feel comfortable asking the researcher, you may contact the Institutional Review Board at the University of California, Berkeley.</p>
+    </div>
+    <label class="consent-agree">
+      <input type="checkbox" id="consentBox">
+      <span>I have read, understood, and retained a copy of the above consent form and of my own free will I have decided to participate.</span>
+    </label>
+    <button class="btn-primary" id="consentBtn" disabled>Continue</button>
+  `;
+  const box = document.getElementById("consentBox");
+  const btn = document.getElementById("consentBtn");
+  box.addEventListener("change", () => { btn.disabled = !box.checked; });
+  btn.addEventListener("click", () => { if (box.checked) showWelcome(); });
+}
+
 function showWelcome() {
   screen.innerHTML = `
     <h1>${CONFIG.pageTitle}</h1>
@@ -869,11 +955,13 @@ function showEnd() {
   screen.innerHTML = `
     <h1>All done &#127881;</h1>
     <p class="lead">Thank you for participating! Your responses have been recorded.</p>
+    <p class="lead">To receive your compensation, you must click the link below to notify Prolific that you have completed the survey.</p>
+    <p><a class="completion-link" href="${CONFIG.completionUrl}">${CONFIG.completionUrl}</a></p>
   `;
   console.log("results", results);
 }
 
-showWelcome();
+showConsent();
 </script>
 </body>
 </html>
