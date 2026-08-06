@@ -1,0 +1,126 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 2.6407013877783223 
+tiers? <exists> 
+size = 1 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "phones" 
+        xmin = 0 
+        xmax = 2.6407013877783223 
+        intervals: size = 28 
+        intervals [1]:
+            xmin = 0.0 
+            xmax = 0.1107013877783225 
+            text = "AE1_Ask" 
+        intervals [2]:
+            xmin = 0.1107013877783225 
+            xmax = 0.3307013877783227 
+            text = "" 
+        intervals [3]:
+            xmin = 0.3307013877783227 
+            xmax = 0.4607013877783226 
+            text = "ER0_her" 
+        intervals [4]:
+            xmin = 0.4607013877783226 
+            xmax = 0.5107013877783224 
+            text = "" 
+        intervals [5]:
+            xmin = 0.5107013877783224 
+            xmax = 0.5507013877783224 
+            text = "UW0_to" 
+        intervals [6]:
+            xmin = 0.5507013877783224 
+            xmax = 0.6807013877783228 
+            text = "" 
+        intervals [7]:
+            xmin = 0.6807013877783228 
+            xmax = 0.7107013877783226 
+            text = "R_bring" 
+        intervals [8]:
+            xmin = 0.7107013877783226 
+            xmax = 0.7607013877783224 
+            text = "IH1_bring" 
+        intervals [9]:
+            xmin = 0.7607013877783224 
+            xmax = 0.8807013877783225 
+            text = "NG_bring" 
+        intervals [10]:
+            xmin = 0.8807013877783225 
+            xmax = 0.9207013877783226 
+            text = "" 
+        intervals [11]:
+            xmin = 0.9207013877783226 
+            xmax = 1.0207013877783226 
+            text = "IY1_these" 
+        intervals [12]:
+            xmin = 1.0207013877783226 
+            xmax = 1.2307013877783226 
+            text = "" 
+        intervals [13]:
+            xmin = 1.2307013877783226 
+            xmax = 1.2707013877783226 
+            text = "IH1_things" 
+        intervals [14]:
+            xmin = 1.2707013877783226 
+            xmax = 1.4407013877783226 
+            text = "NG_things" 
+        intervals [15]:
+            xmin = 1.4407013877783226 
+            xmax = 1.5707013877783225 
+            text = "" 
+        intervals [16]:
+            xmin = 1.5707013877783225 
+            xmax = 1.6107013877783225 
+            text = "W_with" 
+        intervals [17]:
+            xmin = 1.6107013877783225 
+            xmax = 1.6407013877783228 
+            text = "IH0_with" 
+        intervals [18]:
+            xmin = 1.6407013877783228 
+            xmax = 1.7607013877783224 
+            text = "" 
+        intervals [19]:
+            xmin = 1.7607013877783224 
+            xmax = 1.900701387778323 
+            text = "ER1_her" 
+        intervals [20]:
+            xmin = 1.900701387778323 
+            xmax = 2.030701387778323 
+            text = "" 
+        intervals [21]:
+            xmin = 2.030701387778323 
+            xmax = 2.0607013877783222 
+            text = "ER0_from" 
+        intervals [22]:
+            xmin = 2.0607013877783222 
+            xmax = 2.150701387778323 
+            text = "M_from" 
+        intervals [23]:
+            xmin = 2.150701387778323 
+            xmax = 2.190701387778323 
+            text = "" 
+        intervals [24]:
+            xmin = 2.190701387778323 
+            xmax = 2.230701387778322 
+            text = "AH0_the" 
+        intervals [25]:
+            xmin = 2.230701387778322 
+            xmax = 2.3807013877783225 
+            text = "" 
+        intervals [26]:
+            xmin = 2.3807013877783225 
+            xmax = 2.450701387778323 
+            text = "AO1_store" 
+        intervals [27]:
+            xmin = 2.450701387778323 
+            xmax = 2.5607013877783222 
+            text = "R_store" 
+        intervals [28]:
+            xmin = 2.5607013877783222 
+            xmax = 2.6407013877783223 
+            text = "" 
