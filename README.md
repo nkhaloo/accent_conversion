@@ -1,5 +1,7 @@
 ## Accent Conversion
 
+Project convention: analysis scripts should not contain code comments.
+
 This project evaluates zero-shot **accent conversion** — transferring the timbre and accent of a non-native English speaker onto American English source audio — using two voice conversion models: **OpenVoice v2** and **SeedVC**.
 
 The goal is to understand how well each model preserves the target speaker's voice identity (timbre) while using the content of a different source utterance, with a focus on speakers from Hindi- and Gujarati-accented English backgrounds.
