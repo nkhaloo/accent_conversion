@@ -19,7 +19,7 @@ accent_conversion/
 ├── speaker_embedding_experiment/  Speaker-similarity analysis code
 ```
 
-## Experiment files 
+## Experiment: This is the main folder. All of the relevant analysis was done here
 
 ```text
 experiment/
