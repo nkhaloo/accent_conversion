@@ -54,8 +54,8 @@ def _run_mfa_align(*, corpus_dir: Path, output_dir: Path) -> None:
         MFA_BIN,
         "align",
         str(corpus_dir),
-        "english_us_arpa",  # dictionary model
-        "english_us_arpa",  # acoustic model
+        "english_us_arpa",
+        "english_us_arpa",
         str(output_dir),
         "--clean",
         "--overwrite",
@@ -152,7 +152,7 @@ def run_align_incremental(
                 continue
 
             _safe_link_or_copy(wav_path, tmp_corpus / wav_path.name)
-            # Transcript in the mini-corpus must match the wav stem.
+
             _safe_link_or_copy(transcript, tmp_corpus / f"{stem}{transcript.suffix}")
 
         print(f"\n[MFA] Running incremental align on {len(missing_stems)} items...")
@@ -164,7 +164,7 @@ def run_align_incremental(
             if not candidates:
                 print(f"[MFA] WARNING: missing expected TextGrid for {stem}")
                 continue
-            # Take the first match (should be unique for this mini-corpus).
+
             src_grid = candidates[0]
             dst_grid = output_dir / src_grid.name
             if skip_existing and dst_grid.exists() and dst_grid.stat().st_size > 0:

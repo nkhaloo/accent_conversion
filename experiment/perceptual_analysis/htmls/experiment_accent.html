@@ -233,8 +233,8 @@ const AUDIO_BASE = "../../audio/sentence_extracts/all_files_normalized";
    STIMULI
    Each item = one model output: a timbre reference (speaker
    identity) + a style/source reference (accent) fed to the model.
-   Only output files are model-generated; reference_* and source_*
-   files are natural human recordings shared across both models.
+   Only output files are model-generated. Natural reference and source
+   recordings are copied with the model/rank prefix of their paired output.
    ============================================================ */
 const ITEMS = {
   openvoice: [
@@ -267,11 +267,11 @@ const ITEMS = {
 function outputFile(model, item, n) {
   return `${AUDIO_BASE}/${model}_${item.group}_output_sentence${n}_timbre-${item.timbre}__source-${item.source}__${model}_s${n}.wav`;
 }
-function timbreRefFile(item, n) {
-  return `${AUDIO_BASE}/reference_sentence${n}_${item.timbre}_s${n}.wav`;
+function timbreRefFile(model, item, n) {
+  return `${AUDIO_BASE}/${model}_${item.group}_reference_sentence${n}_${item.timbre}_s${n}.wav`;
 }
-function sourceRefFile(item, n) {
-  return `${AUDIO_BASE}/source_sentence${n}_${item.source}_s${n}.wav`;
+function sourceRefFile(model, item, n) {
+  return `${AUDIO_BASE}/${model}_${item.group}_source_sentence${n}_${item.source}_s${n}.wav`;
 }
 
 /* Conditions: first/second are canonical roles; which one actually plays
@@ -289,8 +289,8 @@ const CONDITIONS = [
 
 function fileFor(role, model, item, n) {
   if (role === "output")    return outputFile(model, item, n);
-  if (role === "timbreRef") return timbreRefFile(item, n);
-  return sourceRefFile(item, n);
+  if (role === "timbreRef") return timbreRefFile(model, item, n);
+  return sourceRefFile(model, item, n);
 }
 
 /* ============================================================
@@ -346,13 +346,17 @@ function crossSourceTrials(model) {
   if (sources.length < 2) return [];
   const [a, b] = sources;
   const cond = { id: 6, name: "sourceRef_vs_sourceRef_cross", first: "sourceRef", second: "sourceRef", sameSpeakerTruth: "same" };
-  const mk = (s1, s2) => ({
-    model,
-    item: { group: "NA", timbre: "NA", source: s1 + "__vs__" + s2 },
-    cond,
-    audio1: sourceRefFile({ source: s1 }, 1),
-    audio2: sourceRefFile({ source: s2 }, 2)
-  });
+  const mk = (s1, s2) => {
+    const item1 = ITEMS[model].find(item => item.source === s1);
+    const item2 = ITEMS[model].find(item => item.source === s2);
+    return {
+      model,
+      item: { group: "NA", timbre: "NA", source: s1 + "__vs__" + s2 },
+      cond,
+      audio1: sourceRefFile(model, item1, 1),
+      audio2: sourceRefFile(model, item2, 2)
+    };
+  };
   return [mk(a, b), mk(b, a)];
 }
 

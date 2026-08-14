@@ -50,7 +50,7 @@ def reference_normalizers(data, metadata, gender_maps):
         frames["phone"] = frames["Label"].map(base_phone)
         frames["gender"] = gender
         frames["reference_type"] = reference_type
-        # Model/rank-prefixed copies represent the same natural recording.
+
         frames["recording"] = f"{reference_type}:{info['sentence']}:{info['speaker_id']}"
         parts.append(frames)
     references = pd.concat(parts, ignore_index=True).drop_duplicates(

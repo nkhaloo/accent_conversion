@@ -11,11 +11,11 @@ INPUT_OUTPUT_PAIRS = [
 
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg"}
 
-# Safer filter chain:
-# - remove low rumble
-# - remove very high-frequency noise
-# - light denoise
-# - normalize peak to about -3 dBFS
+
+
+
+
+
 FILTER_CHAIN = ",".join([
     "highpass=f=50",
     "lowpass=f=7800",

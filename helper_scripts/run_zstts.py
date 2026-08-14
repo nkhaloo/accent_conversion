@@ -116,7 +116,7 @@ def load_gender_map_from_english_sources_csv(english_sources_csv: Path) -> dict[
 			if not stem:
 				continue
 
-			# Prefer explicit sex column if present, else fall back to age_sex.
+
 			gender = _parse_gender(row.get("sex") or "")
 			if gender == "unknown":
 				gender = _parse_gender(row.get("age_sex") or "")
@@ -197,11 +197,11 @@ def orchestrate(
 
 	self_script = Path(__file__).resolve()
 
-	# ---------
-	# OpenVoice
-	# ---------
+
+
+
 	if run_openvoice:
-		# Convert each existing source wav into each reference speaker (gender-matched).
+
 		for ref_wav in inputs.reference_wavs:
 			ref_g = timbre_gender.get(ref_wav.stem, "unknown")
 			if ref_g == "unknown":
@@ -236,9 +236,9 @@ def orchestrate(
 				print(f"\n[OpenVoice] timbre={ref_wav.stem}({ref_g}) source={src_wav.stem}({src_g})")
 				_run(argv, cwd=repo_root)
 
-	# ---------
-	# SeedVC (gender-matched pairs only)
-	# ---------
+
+
+
 	if not run_seedvc:
 		return
 
@@ -334,13 +334,13 @@ def openvoice_child(*, reference_wav: Path, source_wav: Path, output_root: Path)
 
 	dirs = ensure_dirs(output_root.expanduser().resolve())
 
-	# Make vendored OpenVoice importable.
+
 	sys.path.insert(0, str(openvoice_root))
 
 	import torch
 
-	from openvoice import se_extractor  # type: ignore[import-not-found]
-	from openvoice.api import ToneColorConverter  # type: ignore[import-not-found]
+	from openvoice import se_extractor
+	from openvoice.api import ToneColorConverter
 
 	ckpt_converter_dir = openvoice_root / "checkpoints_v2" / "converter"
 	config_json = ckpt_converter_dir / "config.json"
@@ -356,11 +356,11 @@ def openvoice_child(*, reference_wav: Path, source_wav: Path, output_root: Path)
 
 	source_audio = source_wav
 
-	# 2) OpenVoice converter
+
 	converter = ToneColorConverter(str(config_json), device=device)
 	converter.load_ckpt(str(checkpoint_pth))
 
-	# Some forks cache a whisper model; reset when present.
+
 	if hasattr(se_extractor, "model"):
 		se_extractor.model = None
 
@@ -399,7 +399,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 	p.add_argument("--openvoice-env", default=os.environ.get("OPENVOICE_ENV", "openvoice"))
 	p.add_argument("--seedvc-env", default=os.environ.get("SEEDVC_ENV", "seed"))
 
-	# SeedVC quality knobs (passed through to seed-vc/inference.py)
+
 	p.add_argument(
 		"--seedvc-diffusion-steps",
 		type=int,
@@ -467,9 +467,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 		help="All outputs go under this folder (subfolders will be created)",
 	)
 
-	# Note: OpenVoice no longer uses MeloTTS; it converts source_wav -> reference_wav.
 
-	# Child-only args
+
+
 	p.add_argument("--reference-wav", help=argparse.SUPPRESS)
 	p.add_argument("--source-wav", help=argparse.SUPPRESS)
 

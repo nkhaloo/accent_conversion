@@ -11,19 +11,19 @@ OUT_TABLE = HERE / "rti_by_model_feature.csv"
 FIG_DIR = HERE.parent / "figures"
 
 FEATURES = [
-    # corrected harmonic-amplitude RATIOS only, harmonic-based (no formant-amplitude tilts)
+
     "H1H2c", "H2H4c", "H42Kc", "H2KH5Kc",
-    # harmonics-to-noise ratios
+
     "HNR05", "HNR15", "HNR25", "HNR35",
-    # snack formants, formant bandwidths, f0
+
     "sF1", "sF2", "sF3", "sF4",
     "sB1", "sB2", "sB3", "sB4",
     "sF0",
-    # periodicity / energy
+
     "CPP", "Energy",
 ]
 
-# ---- filename parsing -------------------------------------------------------
+
 RE_COMMON = re.compile(r"^(openvoice|seed_vc)_(top5|bottom5)_(output|reference|source)_sentence([12])_(.+)\.mat$")
 RE_OUTPUT = re.compile(r"^timbre-(.+?)__source-(.+?)__(?:openvoice|seed_vc)_s[12]$")
 RE_REFSRC = re.compile(r"^(.+)_s[12]$")
@@ -41,14 +41,14 @@ def parse(fname: str):
             return None
         info["timbre_id"] = mo.group(1)
         info["source_id"] = mo.group(2)
-    else:  # reference or source
+    else:
         mr = RE_REFSRC.match(rest)
         info["speaker_id"] = mr.group(1) if mr else rest
     return info
 
 
 def base_phone(label: str) -> str:
-    # strip word-context suffix: AA1_call -> AA1, R0_from -> R0, keep stress digit
+
     return str(label).split("_")[0]
 
 
@@ -61,14 +61,14 @@ def main():
     if unparsed:
         print(f"WARNING: {len(unparsed)} filenames did not parse, e.g. {unparsed[:3]}")
 
-    # per-recording, per-segment feature MEAN (for O and R) and SD (for R denom)
-    grp = df.groupby(["Filename", "seg"])
-    means = grp[FEATURES].mean()          # nan-aware
-    sds = grp[FEATURES].std(ddof=1)       # sample SD across frames
 
-    # per-feature denominator FLOOR: light insurance so a near-zero reference
-    # SD can't detonate RTI. Computed as the 5th percentile of that feature's
-    # reference-segment SDs.
+    grp = df.groupby(["Filename", "seg"])
+    means = grp[FEATURES].mean()
+    sds = grp[FEATURES].std(ddof=1)
+
+
+
+
     ref_files = {v["filename"] for v in meta.values()
                  if v and v["role"] in ("reference", "source")}
     ref_sds = sds.loc[sds.index.get_level_values(0).isin(ref_files)]
@@ -76,13 +76,13 @@ def main():
     for f in FEATURES:
         p05 = ref_sds[f].quantile(0.05)
         med = ref_sds[f].median()
-        # if even the 5th pctile collapses to ~0, fall back to the median
+
         floors[f] = p05 if (pd.notna(p05) and p05 > 1e-6) else (med if pd.notna(med) else 0.0)
     print("per-feature denominator floors (5th pctile of reference SDs):")
     for f in FEATURES:
         print(f"  {f:9s} {floors[f]:.4f}")
 
-    # lookup tables for parents, keyed by (sentence, speaker_id)
+
     refs, srcs = {}, {}
     for fn, v in meta.items():
         if v is None:
@@ -93,7 +93,7 @@ def main():
             srcs.setdefault((v["sentence"], v["speaker_id"]), []).append(v)
 
     def pick(candidates, model, rank):
-        # prefer same model+rank prefix; else fall back to any (same speaker recording)
+
         for c in candidates:
             if c["model"] == model and c["rank"] == rank:
                 return c
@@ -118,7 +118,7 @@ def main():
             r_fn = r["filename"]
             r_mean = means.loc[r_fn]
             r_sd = sds.loc[r_fn]
-            # segments present in BOTH output and this reference
+
             common = o_mean.index.intersection(r_mean.index)
             for seg in common:
                 for f in FEATURES:
@@ -126,10 +126,10 @@ def main():
                     rm = r_mean.at[seg, f]
                     rs = r_sd.at[seg, f]
                     raw_diff = om - rm
-                    # RTI is a non-negative distance: numerator is |O - R|
+
                     valid = rs is not None and not np.isnan(rs) and rs != 0
                     rti = abs(raw_diff) / rs if valid else np.nan
-                    # floored denominator: never smaller than the feature's floor
+
                     denom_f = max(rs, floors[f]) if (rs is not None and not np.isnan(rs)) else floors[f]
                     rti_fl = abs(raw_diff) / denom_f if denom_f and not np.isnan(raw_diff) else np.nan
                     rows.append({
@@ -185,7 +185,7 @@ def plot_model_feature_bars(out: pd.DataFrame):
     import matplotlib.pyplot as plt
 
     FIG_DIR.mkdir(exist_ok=True)
-    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}   # CVD-safe blue/orange
+    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}
     caps = {"timbre": 2.2, "style": 4.0}
     df = out[out["RTI_floored"].notna()]
     x = np.arange(len(FEATURES))
@@ -200,7 +200,7 @@ def plot_model_feature_bars(out: pd.DataFrame):
             ax.bar(x + (k - 0.5) * w, np.minimum(vals, cap), w,
                    label=model, color=colors[model])
             for xi, v in zip(x + (k - 0.5) * w, vals):
-                if v > cap:   # outlier clipped: annotate true value
+                if v > cap:
                     ax.text(xi, cap, f"{v:.1f}", ha="center", va="bottom", fontsize=6)
         ax.set_ylim(0, cap)
         ax.set_xticks(x)
@@ -228,7 +228,7 @@ def plot_segment_distribution(out: pd.DataFrame):
     import matplotlib.pyplot as plt
 
     FIG_DIR.mkdir(exist_ok=True)
-    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}   # CVD-safe blue/orange
+    colors = {"openvoice": "#4E79A7", "seed_vc": "#F28E2B"}
     seg_order = ["AA1", "AE1", "AH0", "AO1", "EH1", "ER0", "IH0", "IH1", "IY1",
                  "L", "M", "NG", "R", "W"]
     caps = {"timbre": 6.0, "style": 7.0}

@@ -19,7 +19,7 @@ OV_DIR = ROOT / "output" / "openvoice" / "textgrids_cleaned"
 SVC_DIR = ROOT / "output" / "seed_vc" / "textgrids_cleaned"
 OUT_DIR = ROOT / "analysis_files"
 
-N_EXTREME = 5  # top-N and bottom-N to copy
+N_EXTREME = 5
 
 
 def embed(encoder: VoiceEncoder, wav_path: Path) -> np.ndarray:
@@ -96,26 +96,26 @@ def plot_rankings(ov_ranked, svc_ranked):
         colors = []
         for i, s in enumerate(sims):
             if i < N_EXTREME:
-                colors.append("#2ecc71")   # top-5 green
+                colors.append("#2ecc71")
             elif i >= n - N_EXTREME:
-                colors.append("#e74c3c")   # bottom-5 red
+                colors.append("#e74c3c")
             else:
-                colors.append("#95a5a6")   # middle grey
+                colors.append("#95a5a6")
 
         bars = ax.barh(range(n), sims, color=colors)
         ax.set_yticks(range(n))
         ax.set_yticklabels(labels, fontsize=7)
-        ax.invert_yaxis()  # rank 1 at top
+        ax.invert_yaxis()
         ax.set_xlabel("Cosine Similarity")
         ax.set_title(f"{title}\nSpeaker Similarity Ranking", fontsize=11)
         ax.set_xlim(0, 1.05)
 
-        # annotate sim value on each bar
+
         for i, (bar, s) in enumerate(zip(bars, sims)):
             ax.text(s + 0.005, bar.get_y() + bar.get_height() / 2,
                     f"{s:.3f}", va="center", fontsize=6)
 
-    # legend
+
     from matplotlib.patches import Patch
     legend_els = [
         Patch(color="#2ecc71", label=f"Top {N_EXTREME}"),
@@ -152,7 +152,7 @@ def plot_grouped_bars(ov_ranked, svc_ranked):
     ax.bar(x - width / 2, ov_sims,  width, label="OpenVoice", color="#3498db", alpha=0.85)
     ax.bar(x + width / 2, svc_sims, width, label="SeedVC",    color="#e67e22", alpha=0.85)
 
-    # language group shading
+
     langs = [lang(k) for k in shared]
     shade = False
     i = 0
@@ -196,7 +196,7 @@ def run_regression(ov_ranked, svc_ranked):
         rows.append({"sim": svc_by_id[k], "model": 1, "speaker": speaker})
 
     df = pd.DataFrame(rows)
-    # mixed model: sim ~ model, random intercept per speaker
+
     model = smf.mixedlm("sim ~ model", df, groups=df["speaker"])
     result = model.fit(reml=True)
     return result, df
@@ -345,7 +345,7 @@ def main():
     print("Writing results markdown…")
     write_results_md(ov_ranked, svc_ranked, lmm_result)
 
-    # print summary tables
+
     for name, ranked in [("OpenVoice", ov_ranked), ("SeedVC", svc_ranked)]:
         print(f"\n{'='*55}")
         print(f"{name} — full ranking (best → worst)")

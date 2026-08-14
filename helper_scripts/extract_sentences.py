@@ -58,16 +58,16 @@ def parse_intervals(tg_path):
     return [(int(i), float(xmin), float(xmax), text) for i, xmin, xmax, text in rows]
 
 
-TAIL_PAD = 0.08  # seconds of silence to keep after last phone
+TAIL_PAD = 0.08
 
 def get_sentence_times(tg_path):
     ivs = parse_intervals(tg_path)
-    # 0-indexed: interval[11] → ivs[10], interval[12] → ivs[11]
-    # interval[38] → ivs[37]  (last phone "R" of "store")
-    # interval[39] → ivs[38]  (silence after store — NOT used as end point)
-    s1_end   = ivs[10][2]          # xmax of interval[11]  (silence after Stella)
-    s2_start = ivs[11][1]          # xmin of interval[12]  (start of Ask)
-    s2_end   = ivs[37][2] + TAIL_PAD  # end of "R" in "store" + small tail
+
+
+
+    s1_end   = ivs[10][2]
+    s2_start = ivs[11][1]
+    s2_end   = ivs[37][2] + TAIL_PAD
     return s1_end, s2_start, s2_end
 
 
