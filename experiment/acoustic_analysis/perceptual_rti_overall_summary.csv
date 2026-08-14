@@ -1,0 +1,5 @@
+model,rank,normalization,median_rti,ci_low,ci_high,output_timbre_pairs
+openvoice,top5,reference_phone_gender_zscore,1.2878392619024521,1.042536390889387,1.5190699033723791,10
+seed_vc,top5,reference_phone_gender_zscore,1.2054065518244004,0.9972660384793616,1.5201569113086315,10
+openvoice,bottom5,reference_phone_gender_zscore,1.3410707327214113,1.0839529303815945,1.5670270011139191,10
+seed_vc,bottom5,reference_phone_gender_zscore,1.0932120937707088,0.8781093279865901,1.2826881652845317,10

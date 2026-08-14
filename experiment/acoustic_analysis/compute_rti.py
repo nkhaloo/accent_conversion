@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""Compute Relative Transfer Index (RTI) from VoiceSauce frame-level output.
-
-RTI_{f,c,t} = (O_mean[f,c] - R_mean[f,c]) / R_sd[f,c]
-
-where O is the model output, R the reference, f a feature, c a segment (base
-phone), and t an (output, reference) pairing. R_sd is the reference's own
-frame-level SD of feature f within segment c (natural-variation scaler).
-
-Each output is paired against BOTH of its parents:
-  - reference_type == "timbre": the accented target-speaker recording
-  - reference_type == "style" : the english source recording
-
-Emits the full long-format table with no aggregation.
-"""
 import re
 import numpy as np
 import pandas as pd
