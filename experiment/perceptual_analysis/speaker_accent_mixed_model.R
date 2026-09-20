@@ -48,9 +48,21 @@ analysis_data$item <- interaction(
     drop=TRUE
 )
 
+# Center the comparison so each group has its own Accent-minus-Voice slope.
+# Source/style is the Accent reference; timbre is the Voice reference.
+# A one-unit change goes from Voice (-0.5) to Accent (+0.5).
+analysis_data$accent_vs_voice <- ifelse(
+    analysis_data$condition == "Output-Style", 0.5, -0.5
+)
+analysis_data$model_tier <- interaction(
+    analysis_data$model, analysis_data$tier, sep=" / ", drop=TRUE
+)
+analysis_data$openvoice_accent_vs_voice <-
+    as.integer(analysis_data$model == "OpenVoice") * analysis_data$accent_vs_voice
+
 speaker_accent_model <- glmer(
-    same_accent ~ model * tier * condition +
-        (1 + condition | participant) +
+    same_accent ~ 0 + model_tier + model_tier:accent_vs_voice +
+        (1 + accent_vs_voice | participant) +
         (1 | item),
     data=analysis_data,
     family=binomial,
@@ -60,7 +72,25 @@ speaker_accent_model <- glmer(
     )
 )
 
+cat("WITHIN EACH MODEL AND TIER: Accent minus Voice (log odds)\n")
+cat("Positive accent_vs_voice coefficients indicate the intended accent pattern.\n")
 print(summary(speaker_accent_model))
+
+# Equivalent parameterization: SeedVC's gap plus the OpenVoice-minus-SeedVC
+# difference in that gap, separately for each tier. Both sets of tests are
+# coefficients printed by summary(), with the same eight fixed-effect degrees
+# of freedom and matching participant and recording random-effects structures.
+speaker_accent_comparison_model <- update(
+    speaker_accent_model,
+    . ~ 0 + model_tier + tier:accent_vs_voice +
+        tier:openvoice_accent_vs_voice +
+        (1 + accent_vs_voice | participant) + (1 | item)
+)
+cat("\nBETWEEN MODELS WITHIN EACH TIER\n")
+cat("accent_vs_voice: SeedVC's Accent-minus-Voice gap.\n")
+cat("openvoice_accent_vs_voice: OpenVoice's gap minus SeedVC's gap.\n")
+print(summary(speaker_accent_comparison_model))
+cat("\nAll summary p-values are unadjusted Wald tests.\n")
 cat("\nSingular fit:", isSingular(speaker_accent_model), "\n")
 cat("Observations:", nrow(analysis_data), "\n")
 cat("Participants:", nlevels(analysis_data$participant), "\n")

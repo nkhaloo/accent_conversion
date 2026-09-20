@@ -6,12 +6,12 @@ import pandas as pd
 
 
 CONDITION_LABELS = {
-    "output_vs_timbreRef": "Output–Timbre",
-    "output_vs_sourceRef": "Output–Style",
-    "timbreRef_vs_sourceRef": "Timbre–Style",
-    "timbreRef_vs_timbreRef": "Timbre–Timbre (Same Speaker)",
-    "sourceRef_vs_sourceRef": "Style–Style (Same Speaker)",
-    "sourceRef_vs_sourceRef_cross": "Style–Style (Different Speakers)",
+    "output_vs_timbreRef": "Output–Voice",
+    "output_vs_sourceRef": "Output–Accent",
+    "timbreRef_vs_sourceRef": "Voice–Accent",
+    "timbreRef_vs_timbreRef": "Voice–Voice (Same Speaker)",
+    "sourceRef_vs_sourceRef": "Accent–Accent (Same Speaker)",
+    "sourceRef_vs_sourceRef_cross": "Accent–Accent (Different Speakers)",
 }
 
 OUTPUT_CONDITIONS = ["output_vs_timbreRef", "output_vs_sourceRef"]
